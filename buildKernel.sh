@@ -15,7 +15,7 @@ kernelVersion=${kernelVersionDir#v} # remove character "v"
 cd ..
 
 kernelUrl=https://kernel.ubuntu.com/~kernel-ppa/mainline/${kernelVersionDir}
-kernelVersionLong=$(echo $kernelVersion | awk 'BEGIN {FS="."}{printf "%02d%02d%02d", $1, $2, $3;}')
+kernelVersionLong=$(echo "$kernelVersion" | awk 'BEGIN {FS="."}{printf "%02d%02d%02d", $1, $2, $3;}')
 kernelFileName=$(curl -sL "$kernelUrl" | grep -iEo "linux-modules-${kernelVersion}-${kernelVersionLong}-generic_${kernelVersion}-${kernelVersionLong}.[0-9]{12}_amd64.deb" | head -1)
 kernelDeb=${kernelUrl}/amd64/${kernelFileName}
 if [[ ! -f "${kernelFileName}" ]]; then
