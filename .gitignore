@@ -1,8 +1,9 @@
 config*
 build.log
-linux-modules*
 linux-headers*
 linux-image*
+linux-libc*
+linux-modules*
 linux-upstream*
 
 linux/
