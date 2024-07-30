@@ -16,17 +16,20 @@ else
   #git pull origin linux-rolling-stable || exit 1
 fi
 
-kernelVersionDir=$(git describe --tags --abbrev=0)
-kernelVersion=${kernelVersionDir#v} # remove character "v"
+# get kernel version from git tag
+kernelVersionDir=$(git tag --merged HEAD --sort=taggerdate | tail -n1)
+kernelVersion=${kernelVersionDir#v} # remove character "v" in version string
 
+# download corresponding git module from Ubuntu mainline repo to extract and use Ubuntu kernel config
 kernelUrl=https://kernel.ubuntu.com/~kernel-ppa/mainline/${kernelVersionDir}
 kernelVersionLong=$(echo "$kernelVersion" | awk 'BEGIN {FS="."}{printf "%02d%02d%02d", $1, $2, $3;}')
 kernelFileName=$(curl -sL "$kernelUrl" | grep -iEo "linux-modules-${kernelVersion}-${kernelVersionLong}-generic_${kernelVersion}-${kernelVersionLong}.[0-9]{12}_amd64.deb" | head -1)
 kernelDeb=${kernelUrl}/amd64/${kernelFileName}
+
 if [[ ! -f "../${kernelFileName}" ]]; then
-  printf "Downloading kernel %s sources from Ubuntu... " "$kernelVersion"
+  printf "Downloading kernel %s config from Ubuntu... " "$kernelVersion"
   if ! wget -O "../${kernelFileName}" -q "${kernelDeb}"; then
-    printf "\nProblem downloading kernel %s sources from Ubuntu mainline: %s. Exiting now!\n" "$kernelVersion" "$kernelDeb"
+    printf "\nProblem downloading kernel %s config from Ubuntu mainline: %s. Exiting now!\n" "$kernelVersion" "$kernelDeb"
     exit 1
   fi
   printf "success\n\n"  
