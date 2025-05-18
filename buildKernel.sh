@@ -12,8 +12,9 @@ if ! make distclean; then
 else
   git reset --hard
   git clean -d -f
-  git pull origin linux-rolling-lts || exit 1
-  #git pull origin linux-rolling-stable || exit 1
+#  git checkout origin/linux-rolling-stable
+  #git pull origin linux-rolling-lts || exit 1
+#  git pull origin linux-rolling-stable || exit 1
 fi
 
 # get kernel version from git tag
@@ -41,7 +42,7 @@ cp .config ../config-"${kernelVersion}" || exit 1
 printf "success\n\n"
 
 git log -1 --pretty=oneline
-echo "Do you wish to compile this kernel?"
+echo "Do you wish to compile this kernel for $(uname -a)?"
 echo "$ARCH"
 select yn in "Yes" "No"; do
   case $yn in
@@ -67,11 +68,11 @@ scripts/config --set-str SYSTEM_REVOCATION_KEYS ""
 printf "Modify optimizations in Makefile...\n\n"
 sed -i 's/-O2/-O3/g' Makefile
 
-printf "make clean build...\n"
+printf "time make clean build...\n"
 make clean
-make ARCH=x86_64 oldconfig
+make ARCH="$(uname -a)" oldconfig
 time nice make -j$(($(nproc) + 1)) bindeb-pkg LOCALVERSION=-"$(whoami)"-"$(hostname)" >>../build.log || exit 1
 
 cd .. || exit 1
-printf "done!\nYou can install now using:\nsudo dpkg -i linux-*%s*.deb\n" "$(whoami)"
+printf "done!\nYou can install now using:\nsudo dpkg -i linux-*%s*.deb\n" "${kernelVersion}"-"$(whoami)"-"$(hostname)"
 
