@@ -36,12 +36,13 @@ if [[ ! -f "../${kernelFileName}" ]]; then
   printf "success\n\n"  
 fi
 
+#make xconfig or make gconfig or:
 printf "Extracting config... "
 dpkg-deb --fsys-tarfile "../${kernelFileName}" | tar xOf - ./boot/config-"${kernelVersion}"-"${kernelVersionLong}"-generic >.config || exit 1
 cp .config ../config-"${kernelVersion}" || exit 1
 printf "success\n\n"
 
-git log -1 --pretty=oneline
+git --no-pager log -1 --pretty=oneline
 echo "Do you wish to compile this kernel for $(uname -a)?"
 echo "$ARCH"
 select yn in "Yes" "No"; do
@@ -55,14 +56,15 @@ export KCFLAGS="-march=native -mtune=native -O3 -pipe" KCPPFLAGS="-march=native 
 
 printf "Modify kernel options...\n"
 scripts/config --enable DEBUG_INFO_NONE
+#scripts/config --disable MODULE_SIG
 scripts/config --disable CONFIG_DEBUG_INFO
 scripts/config --disable CONFIG_DEBUG_INFO_DWARF5
 scripts/config --disable DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT
 scripts/config --disable DEBUG_INFO_DWARF4
 scripts/config --disable DEBUG_INFO_DWARF5
 scripts/config --disable CONFIG_MODULE_SIG_ALL
-scripts/config --set-str SYSTEM_TRUSTED_KEYS ""
-scripts/config --set-str SYSTEM_REVOCATION_KEYS ""
+scripts/config --disable SYSTEM_TRUSTED_KEYS
+scripts/config --disable SYSTEM_REVOCATION_KEYS
 
 
 printf "Modify optimizations in Makefile...\n\n"
@@ -70,8 +72,8 @@ sed -i 's/-O2/-O3/g' Makefile
 
 printf "time make clean build...\n"
 make clean
-make ARCH="$(uname -a)" oldconfig
-time nice make -j$(($(nproc) + 1)) bindeb-pkg LOCALVERSION=-"$(whoami)"-"$(hostname)" >>../build.log || exit 1
+make ARCH="$(uname -m)" olddefconfig #oldconfig or olddefconfig
+time nice make -j$(($(nproc) + 1)) bindeb-pkg LOCALVERSION=-"$(whoami)"-"$(hostname -s)" >>../build.log || exit 1
 
 cd .. || exit 1
 printf "done!\nYou can install now using:\nsudo dpkg -i linux-*%s*.deb\n" "${kernelVersion}"-"$(whoami)"-"$(hostname)"
