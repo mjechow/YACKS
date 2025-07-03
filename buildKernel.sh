@@ -76,5 +76,5 @@ make ARCH="$(uname -m)" olddefconfig #oldconfig or olddefconfig
 time nice make -j$(($(nproc) + 1)) bindeb-pkg LOCALVERSION=-"$(whoami)"-"$(hostname -s)" >>../build.log || exit 1
 
 cd .. || exit 1
-printf "done!\nYou can install now using:\nsudo dpkg -i linux-*%s*.deb\n" "${kernelVersion}"-"$(whoami)"-"$(hostname)"
+printf "done!\nYou can install now using:\nsudo dpkg -i linux-*%s*.deb\n" "${kernelVersion}"-"$(whoami)"-"$(hostname -s)"
 
