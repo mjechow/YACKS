@@ -27,20 +27,54 @@ kernelVersionLong=$(echo "$kernelVersion" | awk 'BEGIN {FS="."}{printf "%02d%02d
 kernelFileName=$(curl -sL "$kernelUrl" | grep -iEo "linux-modules-${kernelVersion}-${kernelVersionLong}-generic_${kernelVersion}-${kernelVersionLong}.[0-9]{12}_amd64.deb" | head -1)
 kernelDeb=${kernelUrl}/amd64/${kernelFileName}
 
-if [[ ! -f "../${kernelFileName}" ]]; then
-  printf "Downloading kernel %s config from Ubuntu... " "$kernelVersion"
-  if ! wget -O "../${kernelFileName}" -q "${kernelDeb}"; then
-    printf "\nProblem downloading kernel %s config from Ubuntu mainline: %s. Exiting now!\n" "$kernelVersion" "$kernelDeb"
-    exit 1
-  fi
-  printf "success\n\n"  
-fi
+set
+echo ${kernelVersionLong}
+exit 1
 
-#make xconfig or make gconfig or:
-printf "Extracting config... "
-dpkg-deb --fsys-tarfile "../${kernelFileName}" | tar xOf - ./boot/config-"${kernelVersion}"-"${kernelVersionLong}"-generic >.config || exit 1
-cp .config ../config-"${kernelVersion}" || exit 1
-printf "success\n\n"
+
+
+function get_config() {
+  if [[ ! -f "../${kernelFileName}" ]]; then
+   printf "Downloading kernel %s config from Ubuntu... " "$kernelVersion"
+    if wget -O "../${kernelFileName}" -q "${kernelDeb}"; then
+      printf "success\n\n"
+    else
+      printf "Problem downloading kernel %s config from Ubuntu mainline: %s.\n" "$kernelVersion" "$kernelDeb"
+      printf "Using old config from current kernel %s!\n\n" "$(uname -r)"
+      cp /boot/config-$(uname -r) .config
+    fi
+  else
+    #make xconfig or make gconfig:
+    printf "Extracting config from ${kernelFileName}..."
+    dpkg-deb --fsys-tarfile "../${kernelFileName}" | tar xOf - ./boot/config-"${kernelVersion}"-"${kernelVersionLong}"-generic >.config || exit 1
+    printf "done\n\n"
+  fi
+
+  cp .config ../config-"${kernelVersion}" || exit 1
+}
+
+printf "Makeing new kernel config...\n"
+make clean
+get_config
+make ARCH="$(uname -m)" olddefconfig #oldconfig or olddefconfig = use defaults for new options
+
+printf "Modify kernel options... "
+./scripts/config --enable X86_NATIVE_CPU # optimize for installed CPU (since 6.16)
+./scripts/config --enable DEBUG_INFO_NONE
+#./scripts/config --disable MODULE_SIG
+./scripts/config --disable CONFIG_DEBUG_INFO
+./scripts/config --disable CONFIG_DEBUG_INFO_DWARF5
+./scripts/config --disable DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT
+./scripts/config --disable DEBUG_INFO_DWARF4
+./scripts/config --disable DEBUG_INFO_DWARF5
+#./scripts/config --disable CONFIG_MODULE_SIG_ALL
+./scripts/config --set-str SYSTEM_REVOCATION_KEYS=""
+./scripts/config --set-str SYSTEM_TRUSTED_KEYS=""
+printf "done!\n"
+
+printf "Modify optimizations in Makefile... "
+sed -i 's/-O2/-O3/g' Makefile
+printf "done\n"
 
 git --no-pager log -1 --pretty=oneline
 echo "Do you wish to compile this kernel for $(uname -a)?"
@@ -52,29 +86,9 @@ select yn in "Yes" "No"; do
   esac
 done
 
-export KCFLAGS="-march=native -mtune=native -O3 -pipe" KCPPFLAGS="-march=native -mtune=native -O3 -pipe"
-
-printf "Modify kernel options...\n"
-scripts/config --enable DEBUG_INFO_NONE
-#scripts/config --disable MODULE_SIG
-scripts/config --disable CONFIG_DEBUG_INFO
-scripts/config --disable CONFIG_DEBUG_INFO_DWARF5
-scripts/config --disable DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT
-scripts/config --disable DEBUG_INFO_DWARF4
-scripts/config --disable DEBUG_INFO_DWARF5
-scripts/config --disable CONFIG_MODULE_SIG_ALL
-scripts/config --disable SYSTEM_TRUSTED_KEYS
-scripts/config --disable SYSTEM_REVOCATION_KEYS
-
-
-printf "Modify optimizations in Makefile...\n\n"
-sed -i 's/-O2/-O3/g' Makefile
-
 printf "time make clean build...\n"
-make clean
-make ARCH="$(uname -m)" olddefconfig #oldconfig or olddefconfig
-time nice make -j$(($(nproc) + 1)) bindeb-pkg LOCALVERSION=-"$(whoami)"-"$(hostname -s)" >>../build.log || exit 1
+export KCFLAGS="-march=native -mtune=native -O3 -pipe" KCPPFLAGS="-march=native -mtune=native -O3 -pipe"
+time nice make -j$(($(nproc) + 1)) bindeb-pkg LOCALVERSION=-"$(whoami)"-"$(hostname -s)" | tee ../log || exit 1
 
 cd .. || exit 1
-printf "done!\nYou can install now using:\nsudo dpkg -i linux-*%s*.deb\n" "${kernelVersion}"-"$(whoami)"-"$(hostname -s)"
-
+printf "...done!\nYou can install now using:\nsudo dpkg -i linux-*%s*.deb\n" "${kernelVersion}"-"$(whoami)"-"$(hostname -s)"
