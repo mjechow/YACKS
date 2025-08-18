@@ -27,27 +27,26 @@ kernelVersionLong=$(echo "$kernelVersion" | awk 'BEGIN {FS="."}{printf "%02d%02d
 kernelFileName=$(curl -sL "$kernelUrl" | grep -iEo "linux-modules-${kernelVersion}-${kernelVersionLong}-generic_${kernelVersion}-${kernelVersionLong}.[0-9]{12}_amd64.deb" | head -1)
 kernelDeb=${kernelUrl}/amd64/${kernelFileName}
 
-set
-echo ${kernelVersionLong}
-exit 1
+function extract_config(){
+    #make xconfig or make gconfig:
+    printf "Extracting config from already existing %s... " "${kernelFileName}"
+    dpkg-deb --fsys-tarfile "../${kernelFileName}" | tar xOf - ./boot/config-"${kernelVersion}"-"${kernelVersionLong}"-generic >.config || exit 1
+    printf "done\n\n"
+}
 
-
-
-function get_config() {
+function get_config(){
   if [[ ! -f "../${kernelFileName}" ]]; then
    printf "Downloading kernel %s config from Ubuntu... " "$kernelVersion"
-    if wget -O "../${kernelFileName}" -q "${kernelDeb}"; then
+    if wget -O "../${kernelFileName}" -q "${kernelDeb}"; then      
       printf "success\n\n"
+      extract_config;
     else
       printf "Problem downloading kernel %s config from Ubuntu mainline: %s.\n" "$kernelVersion" "$kernelDeb"
       printf "Using old config from current kernel %s!\n\n" "$(uname -r)"
-      cp /boot/config-$(uname -r) .config
+      cp /boot/config-"$(uname -r)" .config
     fi
   else
-    #make xconfig or make gconfig:
-    printf "Extracting config from ${kernelFileName}..."
-    dpkg-deb --fsys-tarfile "../${kernelFileName}" | tar xOf - ./boot/config-"${kernelVersion}"-"${kernelVersionLong}"-generic >.config || exit 1
-    printf "done\n\n"
+    extract_config
   fi
 
   cp .config ../config-"${kernelVersion}" || exit 1
@@ -55,7 +54,7 @@ function get_config() {
 
 printf "Makeing new kernel config...\n"
 make clean
-get_config
+get_config;
 make ARCH="$(uname -m)" olddefconfig #oldconfig or olddefconfig = use defaults for new options
 
 printf "Modify kernel options... "
@@ -91,4 +90,4 @@ export KCFLAGS="-march=native -mtune=native -O3 -pipe" KCPPFLAGS="-march=native 
 time nice make -j$(($(nproc) + 1)) bindeb-pkg LOCALVERSION=-"$(whoami)"-"$(hostname -s)" | tee ../log || exit 1
 
 cd .. || exit 1
-printf "...done!\nYou can install now using:\nsudo dpkg -i linux-*%s*.deb\n" "${kernelVersion}"-"$(whoami)"-"$(hostname -s)"
+printf "...done!\nYou can install now using:\nsudo dpkg -i linux-*%s-%s-%s*.deb\n" "${kernelVersion}" "$(whoami)" "$(hostname -s)"
