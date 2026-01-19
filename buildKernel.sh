@@ -40,7 +40,7 @@ function extract_config(){
 function get_config(){
   if [[ ! -f "../${kernelFileName}" ]]; then
    printf "Downloading kernel %s config from Ubuntu... " "$kernelVersion"
-    if 1wget -O "../${kernelFileName}" -q "${kernelDeb}"; then      
+    if wget -O "../${kernelFileName}" -q "${kernelDeb}"; then      
       printf "success\n\n"
       extract_config;
     else
