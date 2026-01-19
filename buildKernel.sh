@@ -490,7 +490,7 @@ export CXX="ccache g++"
 export KCFLAGS="-march=znver4 -mtune=znver4 -O3 -pipe"
 export KCPPFLAGS="-march=znver4 -mtune=znver4 -O3 -pipe"
 
-if ! time nice make -j$(($(nproc) * 2)) ARCH=x86_64 bindeb-pkg INSTALL_MOD_STRIP=1 LOCALVERSION=-"$(whoami)"-"$(hostname -s)-3" | tee ../log; then
+if ! time nice make -j$(($(nproc) * 2)) ARCH=x86_64 bindeb-pkg INSTALL_MOD_STRIP=1 LOCALVERSION=-"$(whoami)"-"$(hostname -s)" | tee ../log; then
   # O=../build-dir
   printf "Build failed!"
   exit 1
