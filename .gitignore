@@ -1,5 +1,5 @@
 config*
-log
+*.log
 linux-headers*
 linux-image*
 linux-libc*
