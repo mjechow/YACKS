@@ -6,7 +6,7 @@ YACS is yet another compile kernel script. It is specifically developed for buil
 It uses the Ubuntu mainline kernel config from https://kernel.ubuntu.com/~kernel-ppa/mainline/ found in the Linux modules generic dep package for configuration of the kernel.
 Afterward it updates the kernel sources (linux-rolling-stable branch) from the official sources: https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/. 
 
-It modifies the kernel config for O3 optimizations and disables all debugging before compiling the sources.
+It modifies the kernel config for optimizations and disables all debugging before compiling the sources.
 
 At last, it offers the installation of the new build kernel dep packages.
 
