@@ -132,5 +132,5 @@ success "Build successful!"
 cd "$SCRIPT_DIR" || die "cd back to script dir failed."
 echo
 info "Install with:"
-info "  sudo dpkg -i linux-image-"$KERNEL_VERSION"-"$LOCALVERSION"*.deb linux-headers-"$KERNEL_VERSION"-"$LOCALVERSION"*.deb"
+info "  sudo dpkg -i linux-image-$KERNEL_VERSION-$LOCALVERSION*.deb linux-headers-$KERNEL_VERSION-$LOCALVERSION*.deb"
 info "  sudo update-grub"
