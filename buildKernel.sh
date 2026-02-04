@@ -1,19 +1,25 @@
 #!/usr/bin/env bash
 
-
 set -euo pipefail
+
+DEBUG=0
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+KERNEL_CONFIG="${SCRIPT_DIR}/kernel_config.sh"
 
 KERNEL_SRC_DIR="linux"
 BUILD_LOG_FILE="kernelBuild.log"
+LOCALVERSION="$(whoami)-$(hostname -s)"
 
 # --- Helpers -----------------------------------------------------------------
-die()    { printf "ERROR: %s\n" "$*" >&2; exit 1; }
-info()   { printf "[*] %s\n" "$*"; }
-success() { printf "[+] %s\n" "$*"; }
+info()   { printf "[*] %s\n" "$@"; }
+warn()   { printf "[!] %s\n" "$@"; }
+debug()  { [[ $DEBUG -eq 0 ]] && return 0; printf "[D] %s\n" "$@"; }
+success() { printf "[+] %s\n" "$@"; }
+die()    { printf "ERROR: %s\n" "$@" >&2; exit 1; }
 
 # --- Sanity checks -----------------------------------------------------------
 info "Current kernel: $(uname -r)"
-
+debug "Script directory: $SCRIPT_DIR"
 cd "$KERNEL_SRC_DIR" 2>/dev/null \
     || die "Kernel source directory '$KERNEL_SRC_DIR' not found. Did you clone the kernel sources?"
 
@@ -29,18 +35,19 @@ KERNEL_VERSION="${KERNEL_VERSION_DIR#v}"   # strip leading 'v'
 
 # --- Download Ubuntu mainline .deb to extract its .config --------------------
 UBUNTU_BASE_URL="https://kernel.ubuntu.com/~kernel-ppa/mainline/${KERNEL_VERSION_DIR}"
+debug "Ubuntu mainline URL: $UBUNTU_BASE_URL"
 # Ubuntu encodes version as zero-padded 6-digit string: 6.12.3 -> 061203
 KERNEL_VERSION_LONG=$(echo "$KERNEL_VERSION" | awk -F. '{printf "%02d%02d%02d", $1, $2, $3}')
 DEB_FILENAME="linux-modules-${KERNEL_VERSION}-${KERNEL_VERSION_LONG}-generic_${KERNEL_VERSION}-${KERNEL_VERSION_LONG}"
 
 # Find the exact .deb name (timestamp suffix varies)
 DEB_FILE=$(curl -sL "$UBUNTU_BASE_URL" \
-    | grep -oE "${DEB_FILENAME}\.[0-9]{12}_amd64\.deb" \
-    | head -1)
-[[ -n "$DEB_FILE" ]] || die "Could not find .deb for kernel ${KERNEL_VERSION} at ${UBUNTU_BASE_URL}"
+    | grep -Eo "${DEB_FILENAME}.[0-9]{12}_amd64.deb" \
+    | head -1) || warn "Could not find .deb for kernel ${KERNEL_VERSION} at ${UBUNTU_BASE_URL}"
 
 DEB_URL="${UBUNTU_BASE_URL}/amd64/${DEB_FILE}"
-DEB_CACHE="../${DEB_FILE}"
+debug "Ubuntu .deb URL: $DEB_URL"
+DEB_CACHE="$SCRIPT_DIR/${DEB_FILE}"
 CONFIG_INSIDE_DEB="./boot/config-${KERNEL_VERSION}-${KERNEL_VERSION_LONG}-generic"
 
 extract_ubuntu_config() {
@@ -56,16 +63,16 @@ fetch_ubuntu_config() {
         extract_ubuntu_config
     else
         info "Downloading kernel ${KERNEL_VERSION} config from Ubuntu mainline..."
-        if wget -q -O "$DEB_CACHE" "$DEB_URL"; then
+        if [[ -n "$DEB_CACHE" ]] && wget -O "$DEB_CACHE" -q "$DEB_URL"; then
             success "Download complete."
             extract_ubuntu_config
         else
-            printf "WARNING: Download failed (%s). Falling back to running kernel config.\n" "$DEB_URL"
+            warn "Download failed ($DEB_URL). Falling back to running kernel config."
             cp /boot/config-"$(uname -r)" .config
         fi
     fi
     # Keep a human-readable copy outside the source tree
-    cp .config "../config-${KERNEL_VERSION}"
+    cp .config "$SCRIPT_DIR/config-$KERNEL_VERSION"
 }
 
 # --- Generate base config ----------------------------------------------------
@@ -75,13 +82,14 @@ fetch_ubuntu_config
 make ARCH="$(uname -m)" olddefconfig   # fill in defaults for new symbols
 
 info "Applying custom kernel options..."
-source "../kernel_config.sh"
+# shellcheck source=kernel_config.sh
+source "$KERNEL_CONFIG"
+cp .config "$SCRIPT_DIR/config-$KERNEL_VERSION-$LOCALVERSION"
 success "Custom options applied."
 
 info "Validating configuration..."
 if ! make ARCH="$(uname -m)" olddefconfig; then
-    printf "Configuration validation failed!\n"
-    exit 1
+    die "Configuration validation failed!\n"
 fi
 success "Done."
 
@@ -107,25 +115,22 @@ export CXX="ccache g++"
 export KCFLAGS="-march=znver4 -mtune=znver4 -O2 -pipe"
 export KCPPFLAGS="-march=znver4 -mtune=znver4 -O2 -pipe"
 
-LOCALVERSION="-$(whoami)-$(hostname -s)"
-
 info "Starting build ($(nproc) threads)..."
 if ! time nice make -j"$(nproc)" \
         ARCH=x86_64 \
-        LOCALVERSION="$LOCALVERSION" \
+        LOCALVERSION="-$LOCALVERSION" \
         INSTALL_MOD_STRIP=1 \
         bindeb-pkg \
         | tee ../$BUILD_LOG_FILE; then
-    die "Build failed. Check ../$BUILD_LOG_FILE for details."
+    die "Build failed. Check $SCRIPT_DIR/$BUILD_LOG_FILE for details."
 fi
 
 #echo performance | sudo tee /sys/devices/system/cpu/cpufreq/policy*/energy_performance_preference
 
 # --- Done --------------------------------------------------------------------
 success "Build successful!"
-cd .. || exit 1
+cd "$SCRIPT_DIR" || die "cd back to script dir failed."
 echo
-echo "Install with:"
-printf "  sudo dpkg -i linux-image-%s%s*.deb linux-headers-%s%s*.deb\n" \
-    "$KERNEL_VERSION" "$LOCALVERSION" "$KERNEL_VERSION" "$LOCALVERSION"
-printf "  sudo update-grub\n"
+info "Install with:"
+info "  sudo dpkg -i linux-image-"$KERNEL_VERSION"-"$LOCALVERSION"*.deb linux-headers-"$KERNEL_VERSION"-"$LOCALVERSION"*.deb"
+info "  sudo update-grub"

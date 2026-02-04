@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # ==============================================================================
 # kernel_config.sh – Kernel-Konfigurationsoptionen
 # ==============================================================================
@@ -32,7 +34,6 @@
 ./scripts/config --disable CONFIG_CC_OPTIMIZE_FOR_SIZE
 ./scripts/config --disable CONFIG_LTO_CLANG
 
-
 # --- Module compression (zstd is faster than gzip on modern CPUs) ------------
 ./scripts/config --enable  CONFIG_MODULE_COMPRESS_ZSTD
 ./scripts/config --disable CONFIG_MODULE_COMPRESS_GZIP
@@ -49,8 +50,11 @@
 ./scripts/config --enable CONFIG_RD_ZSTD
 
 # --- Timer & scheduling ------------------------------------------------------
-./scripts/config --enable  CONFIG_HZ_PERIODIC
-./scripts/config --disable CONFIG_NO_HZ_FULL
+#./scripts/config --enable  CONFIG_HZ_PERIODIC
+#./scripts/config --disable CONFIG_NO_HZ_FULL
+./scripts/config --disable CONFIG_HZ_PERIODIC
+./scripts/config --enable CONFIG_NO_HZ_IDLE        # Better for desktop
+./scripts/config --enable CONFIG_NO_HZ_FULL        # For CPU isolation if needed
 ./scripts/config --enable  CONFIG_TICK_CPU_ACCOUNTING
 ./scripts/config --disable CONFIG_VIRT_CPU_ACCOUNTING_GEN
 ./scripts/config --disable CONFIG_NTP_PPS                       # desktop doesn't need PPS
@@ -70,6 +74,8 @@
 ./scripts/config --set-val CONFIG_HZ 1000
 
 # --- CPU: AMD Zen 4 / Ryzen 9 7950X3D ---------------------------------------
+./scripts/config --enable CONFIG_AMD_X3D_OPTIMIZER
+./scripts/config --enable CONFIG_SCHED_MC_PRIO
 ./scripts/config --enable  CONFIG_SCHED_MC
 ./scripts/config --enable  CONFIG_SCHED_SMT
 ./scripts/config --enable  CONFIG_CPU_SUP_AMD
@@ -78,13 +84,17 @@
 ./scripts/config --disable CONFIG_CPU_SUP_CENTAUR
 ./scripts/config --disable CONFIG_CPU_SUP_ZHAOXIN
 ./scripts/config --set-val CONFIG_NR_CPUS 32                    # 16 cores / 32 threads
-./scripts/config --enable  CONFIG_X86_64_V4                     # AVX-512 (Zen 4) 
+./scripts/config --disable CONFIG_X86_64_V4
+./scripts/config --enable  CONFIG_X86_64_V3                     # AVX-512 (Zen 4<) 
 ./scripts/config --enable  CONFIG_X86_32
 ./scripts/config --disable CONFIG_MAXSMP
 ./scripts/config --enable  CONFIG_X86_MCE_AMD
 ./scripts/config --disable CONFIG_X86_ANCIENT_MCE
-./scripts/config --enable  CONFIG_X86_X2APIC
+./scripts/config --enable  CONFIG_X86_X2APIC^
 ./scripts/config --enable  CONFIG_HAVE_PERF_EVENTS_NMI
+./scripts/config --enable CONFIG_ACPI_PROCESSOR_IDLE
+./scripts/config --enable CONFIG_CPU_IDLE_GOV_LADDER
+./scripts/config --enable CONFIG_CPU_IDLE_GOV_MENU
 
 # --- AMD platform / SMBus / GPIO ---------------------------------------------
 ./scripts/config --enable CONFIG_AMD_NB
@@ -141,7 +151,7 @@
 ./scripts/config --enable CONFIG_ACPI_BUTTON
 
 # --- PCIe (X670E: PCIe 5.0 host) ---------------------------------------------
-./scripts/config --enable CONFIG_PCIEAER
+./scripts/config --enable  CONFIG_PCIEAER
 ./scripts/config --disable CONFIG_PCIEASPM
 
 # --- Memory: 64 GB DDR5 -----------------------------------------------------
@@ -151,6 +161,9 @@
 ./scripts/config --enable  CONFIG_COMPACTION
 ./scripts/config --enable  CONFIG_MIGRATION
 ./scripts/config --disable CONFIG_KSM                           # 64 GB = no need to deduplicate pages
+./scripts/config --enable  CONFIG_NUMA_BALANCING
+./scripts/config --enable  CONFIG_NUMA_BALANCING_DEFAULT_ENABLED
+./scripts/config --enable  CONFIG_COMPACTION_FREQUENCY
 
 # --- GPU: NVIDIA 3070 only – disable everything else ------------------------
 ./scripts/config --enable  CONFIG_DRM
@@ -221,10 +234,9 @@
 ./scripts/config --enable  CONFIG_INET
 ./scripts/config --enable  CONFIG_IPV6
 ./scripts/config --enable  CONFIG_NET_VENDOR_REALTEK
-./scripts/config --enable  CONFIG_R8125  # RTL8125 2.5GbE driver
-./scripts/config --disable CONFIG_R8169                         
-
-
+./scripts/config --enable  CONFIG_R8169          # ← Mainline Driver (RTL8125 ✓)
+./scripts/config --enable  CONFIG_R8169_LEDS
+./scripts/config --disable CONFIG_R8125          # ← Realtek OOT Driver
 
 # Disable WiFi stack entirely
 ./scripts/config --disable CONFIG_WIRELESS
@@ -241,14 +253,16 @@
 ./scripts/config --enable CONFIG_BT
 ./scripts/config --enable CONFIG_BT_RFCOMM                      # Serial-Profil (z. B. Tastatur)
 ./scripts/config --enable CONFIG_BT_HIDP                        # HID-Profil (Maus, Headset)
+./scripts/config --enable CONFIG_BT_BNEP          # Network profile
+./scripts/config --enable CONFIG_BT_HCIBTUSB      # USB Bluetooth adapter
 
 # All other NIC vendors
-for v in INTEL 3COM ADAPTEC AGERE ALTEON AMAZON AMD AQUANTIA ARC ATHEROS \
+for v in INTEL 3COM ADAPTEC ALACRITECH AGERE ALTEON AMAZON AMD AQUANTIA ARC ASIX ATHEROS \
          BROADCOM CADENCE CAVIUM CHELSIO CISCO CORTINA DEC DLINK EMULEX \
          EZCHIP GOOGLE HUAWEI MARVELL MELLANOX MICREL MICROCHIP MICROSEMI \
          MYRICOM NATSEMI NETERION NETRONOME NI NVIDIA OKI PACKET_ENGINES \
          QLOGIC QUALCOMM RDC ROCKER SAMSUNG SEEQ SILAN SIS SMSC STMICRO \
-         SUN SYNOPSYS TEHUTI TI VIA WIZNET XILINX; do
+         SUN SYNOPSYS TEHUTI TI WANGXUN VIA WIZNET XILINX; do
     ./scripts/config --disable "CONFIG_NET_VENDOR_${v}"
 done
 
@@ -264,7 +278,7 @@ done
 ./scripts/config --enable CONFIG_BLK_DEV_NVME
 ./scripts/config --enable CONFIG_NVME_MULTIPATH
 ./scripts/config --enable CONFIG_NVME_HWMON
-./scripts/config --set-val CONFIG_BLK_DEV_NVME_NUM_QUEUES 8 # for PCIe 4.0 x4 SSDs
+./scripts/config --set-val CONFIG_BLK_DEV_NVME_NUM_QUEUES 16 # 16 for PCIe 5.0 x4 SSDs
 
 # --- I/O scheduler: BFQ (good for mixed read/write desktop workloads) -------
 ./scripts/config --enable  CONFIG_MQ_IOSCHED_DEADLINE
