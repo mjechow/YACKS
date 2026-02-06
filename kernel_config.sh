@@ -103,9 +103,9 @@
 ./scripts/config --enable CONFIG_AMD_IOMMU
 ./scripts/config --enable CONFIG_AMD_IOMMU_V2
 ./scripts/config --enable CONFIG_X86_AMD_PLATFORM_DEVICE
-./scripts/config --enable CONFIG_I2C_PIIX4                      # AMD SMBus
-./scripts/config --enable CONFIG_PINCTRL_AMD
-./scripts/config --enable CONFIG_GPIO_AMD_FCH
+./scripts/config --module CONFIG_I2C_PIIX4                      # AMD SMBus (als Modul)
+./scripts/config --module CONFIG_PINCTRL_AMD                    # GPIO (selten direkt gebraucht)
+./scripts/config --module CONFIG_GPIO_AMD_FCH                   # GPIO (selten direkt gebraucht)
 
 # --- AMD memory encryption (SME / SEV) ---------------------------------------
 ./scripts/config --enable  CONFIG_AMD_MEM_ENCRYPT
@@ -134,10 +134,10 @@
 
 # --- Hardware monitoring (MSI X670E) -----------------------------------------
 ./scripts/config --enable CONFIG_HWMON
-./scripts/config --enable CONFIG_NCT6683
-./scripts/config --enable CONFIG_SENSORS_NCT6687
-./scripts/config --enable CONFIG_SENSORS_K10TEMP                # Ryzen temp sensor
-./scripts/config --enable CONFIG_SENSORS_FAM15H_POWER           # Ryzen power sensor
+./scripts/config --module CONFIG_NCT6683                        # Mainboard-Sensor (als Modul)
+./scripts/config --module CONFIG_SENSORS_NCT6687                # Mainboard-Sensor (als Modul)
+./scripts/config --module CONFIG_SENSORS_K10TEMP                # Ryzen temp sensor (als Modul)
+./scripts/config --module CONFIG_SENSORS_FAM15H_POWER           # Ryzen power sensor (als Modul)
 
 # --- Crypto (AES-NI + AVX2 are present on Zen 4) ----------------------------
 ./scripts/config --enable CONFIG_CRYPTO_AES_NI_INTEL
@@ -203,16 +203,16 @@
 ./scripts/config --disable CONFIG_DRM_ACCEL_AMDXDNA
 
 # --- Sound: onboard Realtek via HDA Intel – no HDMI audio -------------------
-./scripts/config --enable  CONFIG_SND_HDA_INTEL
-./scripts/config --enable  CONFIG_SND_HDA_CODEC_REALTEK
-./scripts/config --enable  CONFIG_SND_HDA_CODEC_GENERIC
+./scripts/config --module  CONFIG_SND_HDA_INTEL                 # Als Modul (wird nur bei Bedarf geladen)
+./scripts/config --module  CONFIG_SND_HDA_CODEC_REALTEK         # Als Modul
+./scripts/config --module  CONFIG_SND_HDA_CODEC_GENERIC         # Als Modul
 ./scripts/config --disable CONFIG_SND_HDA_CODEC_HDMI
 ./scripts/config --disable CONFIG_SND_HDA_INTEL_HDMI_SILENT_STREAM
 ./scripts/config --disable CONFIG_SOUND_HDA_CODEC_HDMI         # belt-and-suspenders
 
 # PipeWire / PulseAudio basics
-./scripts/config --enable CONFIG_SND_TIMER
-./scripts/config --enable CONFIG_SND_PCM
+./scripts/config --module CONFIG_SND_TIMER
+./scripts/config --module CONFIG_SND_PCM
 
 # --- USB ---------------------------------------------------------------------
 ./scripts/config --enable CONFIG_USB_SUPPORT
@@ -221,8 +221,8 @@
 
 # --- Input -------------------------------------------------------------------
 ./scripts/config --enable CONFIG_INPUT_EVDEV
-./scripts/config --enable CONFIG_HID_GENERIC
-./scripts/config --enable CONFIG_USB_HID
+./scripts/config --module CONFIG_HID_GENERIC
+./scripts/config --module CONFIG_USB_HID
 
 # No game controllers on this system
 ./scripts/config --disable CONFIG_INPUT_JOYDEV
@@ -250,11 +250,11 @@
 ./scripts/config --disable CONFIG_MT76
 
 # Bluetooth – benötigt auf diesem System
-./scripts/config --enable CONFIG_BT
-./scripts/config --enable CONFIG_BT_RFCOMM                      # Serial-Profil (z. B. Tastatur)
-./scripts/config --enable CONFIG_BT_HIDP                        # HID-Profil (Maus, Headset)
-./scripts/config --enable CONFIG_BT_BNEP          # Network profile
-./scripts/config --enable CONFIG_BT_HCIBTUSB      # USB Bluetooth adapter
+./scripts/config --module CONFIG_BT                             # Als Modul (wird nur bei Bedarf geladen)
+./scripts/config --module CONFIG_BT_RFCOMM                      # Serial-Profil (z. B. Tastatur)
+./scripts/config --module CONFIG_BT_HIDP                        # HID-Profil (Maus, Headset)
+./scripts/config --module CONFIG_BT_BNEP                        # Network profile
+./scripts/config --module CONFIG_BT_HCIBTUSB                    # USB Bluetooth adapter
 
 # All other NIC vendors
 for v in INTEL 3COM ADAPTEC ALACRITECH AGERE ALTEON AMAZON AMD AQUANTIA ARC ASIX ATHEROS \
@@ -321,8 +321,8 @@ done
 # ../scripts/config --disable CONFIG_IMA
 
 # --- VFIO (GPU passthrough / isolation) --------------------------------------
-./scripts/config --enable CONFIG_VFIO
-./scripts/config --enable CONFIG_VFIO_PCI
+./scripts/config --module CONFIG_VFIO                           # Als Modul (nur bei Bedarf für VMs)
+./scripts/config --module CONFIG_VFIO_PCI                       # Als Modul
 
 # --- Unused subsystems -------------------------------------------------------
 ./scripts/config --disable CONFIG_HAMRADIO
