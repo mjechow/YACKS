@@ -8,12 +8,13 @@
   // shfmt Formatting (mkhl.shfmt Extension)
   "shfmt.executablePath": "/usr/bin/shfmt",
   "shfmt.executableArgs": [
-    "-i", "2",    // 2 Leerzeichen Einrückung (statt 4 oder Tabs)
-    "-ci",        // Switch-Cases einrücken
+    "-i",
+    "2", // 2 Leerzeichen Einrückung (statt 4 oder Tabs)
+    "-ci", // Switch-Cases einrücken
     "-sr",
-    "-kp",
+    "-kp"
   ],
-  
+
   // Format on Save
   "[shellscript]": {
     "editor.defaultFormatter": "mkhl.shfmt",
