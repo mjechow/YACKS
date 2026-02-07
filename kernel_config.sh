@@ -45,8 +45,6 @@
 ./scripts/config --enable CONFIG_FW_LOADER_COMPRESS
 ./scripts/config --enable CONFIG_FW_LOADER_COMPRESS_ZSTD
 ./scripts/config --enable CONFIG_FW_LOADER_USER_HELPER
-./scripts/config --enable CONFIG_FW_LOADER_COMPRESS
-./scripts/config --enable CONFIG_FW_LOADER_COMPRESS_ZSTD
 
 # --- Swap compression (zswap) ------------------------------------------------
 ./scripts/config --enable  CONFIG_ZSWAP
