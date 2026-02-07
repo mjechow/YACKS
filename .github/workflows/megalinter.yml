@@ -1,0 +1,28 @@
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+name: "Trigger: Push action"
+permissions: {}
+
+jobs:
+  megalinter:
+    name: MegaLinter
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+      
+      - name: MegaLinter
+        uses: oxsecurity/megalinter/flavors/documentation@v9
+        env:
+          ENABLE_LINTERS: BASH_SHELLCHECK,BASH_SHFMT, MARKDOWN_MARKDOWNLINT, YAML_YAMLLINT, JSON_JSONLINT, GIT_GIT_DIFF, ACTION_ACTIONLINT
+          BASH_SHFMT_ARGUMENTS: "-i 2 -ci -sr -kp"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

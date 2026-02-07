@@ -1,3 +1,22 @@
 {
-  "cSpell.language": "en,de-DE"
+  "cSpell.language": "en,de-DE",
+
+  // ShellCheck Linting
+  "shellcheck.enable": true,
+  "shellcheck.run": "onType",
+
+  // shfmt Formatting (mkhl.shfmt Extension)
+  "shfmt.executablePath": "/usr/bin/shfmt",
+  "shfmt.executableArgs": [
+    "-i", "2",    // 2 Leerzeichen Einrückung (statt 4 oder Tabs)
+    "-ci",        // Switch-Cases einrücken
+    "-sr",
+    "-kp",
+  ],
+  
+  // Format on Save
+  "[shellscript]": {
+    "editor.defaultFormatter": "mkhl.shfmt",
+    "editor.formatOnSave": true
+  }
 }
