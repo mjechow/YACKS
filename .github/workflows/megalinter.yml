@@ -1,3 +1,4 @@
+---
 on:
   push:
     branches:
@@ -19,10 +20,16 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v6
-      
+
       - name: MegaLinter
         uses: oxsecurity/megalinter/flavors/documentation@v9
         env:
-          ENABLE_LINTERS: BASH_SHELLCHECK,BASH_SHFMT,MARKDOWN_MARKDOWNLINT,YAML_YAMLLINT,JSON_JSONLINT,ACTION_ACTIONLINT
+          ENABLE_LINTERS: >-
+            BASH_SHELLCHECK,
+            BASH_SHFMT,
+            MARKDOWN_MARKDOWNLINT,
+            YAML_YAMLLINT,
+            JSON_JSONLINT,
+            ACTION_ACTIONLINT
           BASH_SHFMT_ARGUMENTS: "-i 2 -ci -sr -kp"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
