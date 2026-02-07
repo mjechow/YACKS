@@ -87,10 +87,8 @@ source "$KERNEL_CONFIG"
 cp .config "$SCRIPT_DIR/config-$KERNEL_VERSION-$LOCALVERSION"
 success "Custom options applied."
 
-info "Validating configuration..."
-if ! make ARCH="$(uname -m)" olddefconfig; then
-    die "Configuration validation failed!\n"
-fi
+info "Validating and updating configuration..."
+make ARCH="$(uname -m)" olddefconfig || die "Configuration processing failed!\n"
 success "Done."
 
 # --- Summary & confirmation --------------------------------------------------
@@ -126,6 +124,7 @@ if ! time nice make -j"$(nproc)" \
 fi
 
 #echo performance | sudo tee /sys/devices/system/cpu/cpufreq/policy*/energy_performance_preference
+# ll
 
 # --- Done --------------------------------------------------------------------
 success "Build successful!"
