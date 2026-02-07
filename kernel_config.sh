@@ -103,8 +103,8 @@
 ./scripts/config --enable CONFIG_AMD_IOMMU
 ./scripts/config --enable CONFIG_AMD_IOMMU_V2
 ./scripts/config --enable CONFIG_X86_AMD_PLATFORM_DEVICE
+./scripts/config --enable CONFIG_PINCTRL_AMD
 ./scripts/config --module CONFIG_I2C_PIIX4                      # AMD SMBus (als Modul)
-./scripts/config --module CONFIG_PINCTRL_AMD                    # GPIO (selten direkt gebraucht)
 ./scripts/config --module CONFIG_GPIO_AMD_FCH                   # GPIO (selten direkt gebraucht)
 
 # --- AMD memory encryption (SME / SEV) ---------------------------------------
