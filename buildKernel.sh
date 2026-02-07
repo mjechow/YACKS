@@ -14,20 +14,20 @@ LOCALVERSION="$(whoami)-$(hostname -s)"
 info() { printf "[*] %s\n" "$@"; }
 warn() { printf "[!] %s\n" "$@"; }
 debug() {
-	[[ $DEBUG -eq 0 ]] && return 0
-	printf "[D] %s\n" "$@"
+  [[ $DEBUG -eq 0 ]] && return 0
+  printf "[D] %s\n" "$@"
 }
 success() { printf "[+] %s\n" "$@"; }
 die() {
-	printf "ERROR: %s\n" "$@" >&2
-	exit 1
+  printf "ERROR: %s\n" "$@" >&2
+  exit 1
 }
 
 # --- Sanity checks -----------------------------------------------------------
 info "Current kernel: $(uname -r)"
 debug "Script directory: $SCRIPT_DIR"
-cd "$KERNEL_SRC_DIR" 2>/dev/null ||
-	die "Kernel source directory '$KERNEL_SRC_DIR' not found. Did you clone the kernel sources?"
+cd "$KERNEL_SRC_DIR" 2> /dev/null ||
+     die "Kernel source directory '$KERNEL_SRC_DIR' not found. Did you clone the kernel sources?"
 
 # --- Clean & reset git -------------------------------------------------------
 info "Cleanup and checkout..."
@@ -48,8 +48,8 @@ DEB_FILENAME="linux-modules-${KERNEL_VERSION}-${KERNEL_VERSION_LONG}-generic_${K
 
 # Find the exact .deb name (timestamp suffix varies)
 DEB_FILE=$(curl -sL "$UBUNTU_BASE_URL" |
-	grep -Eo "${DEB_FILENAME}.[0-9]{12}_amd64.deb" |
-	head -1) || warn "Could not find .deb for kernel ${KERNEL_VERSION} at ${UBUNTU_BASE_URL}"
+    grep -Eo "${DEB_FILENAME}.[0-9]{12}_amd64.deb" |
+    head -1) || warn "Could not find .deb for kernel ${KERNEL_VERSION} at ${UBUNTU_BASE_URL}"
 
 DEB_URL="${UBUNTU_BASE_URL}/amd64/${DEB_FILE}"
 debug "Ubuntu .deb URL: $DEB_URL"
@@ -57,28 +57,28 @@ DEB_CACHE="$SCRIPT_DIR/${DEB_FILE}"
 CONFIG_INSIDE_DEB="./boot/config-${KERNEL_VERSION}-${KERNEL_VERSION_LONG}-generic"
 
 extract_ubuntu_config() {
-	info "Extracting .config from ${DEB_FILE}..."
-	dpkg-deb --fsys-tarfile "$DEB_CACHE" |
-		tar xOf - "$CONFIG_INSIDE_DEB" >.config ||
-		die "Failed to extract config from deb"
-	success "Config extracted."
+  info "Extracting .config from ${DEB_FILE}..."
+  dpkg-deb --fsys-tarfile "$DEB_CACHE" |
+      tar xOf - "$CONFIG_INSIDE_DEB" > .config ||
+       die "Failed to extract config from deb"
+  success "Config extracted."
 }
 
 fetch_ubuntu_config() {
-	if [[ -f "$DEB_CACHE" ]]; then
-		extract_ubuntu_config
-	else
-		info "Downloading kernel ${KERNEL_VERSION} config from Ubuntu mainline..."
-		if [[ -n "$DEB_CACHE" ]] && wget -O "$DEB_CACHE" -q "$DEB_URL"; then
-			success "Download complete."
-			extract_ubuntu_config
-		else
-			warn "Download failed ($DEB_URL). Falling back to running kernel config."
-			cp /boot/config-"$(uname -r)" .config
-		fi
-	fi
-	# Keep a human-readable copy outside the source tree
-	cp .config "$SCRIPT_DIR/config-$KERNEL_VERSION"
+  if [[ -f "$DEB_CACHE" ]]; then
+    extract_ubuntu_config
+  else
+    info "Downloading kernel ${KERNEL_VERSION} config from Ubuntu mainline..."
+    if [[ -n "$DEB_CACHE" ]] && wget -O "$DEB_CACHE" -q "$DEB_URL"; then
+      success "Download complete."
+      extract_ubuntu_config
+    else
+      warn "Download failed ($DEB_URL). Falling back to running kernel config."
+      cp /boot/config-"$(uname -r)" .config
+    fi
+  fi
+  # Keep a human-readable copy outside the source tree
+  cp .config "$SCRIPT_DIR/config-$KERNEL_VERSION"
 }
 
 # --- Generate base config ----------------------------------------------------
@@ -105,13 +105,13 @@ echo "Kernel version: ${KERNEL_VERSION}"
 echo
 read -rp "Compile this kernel? [y/N] " confirm
 [[ "$confirm" =~ ^[Yy]$ ]] || {
-	info "Aborted."
-	exit 0
+  info "Aborted."
+  exit 0
 }
 
 # --- Verify GCC --------------------------------------------------------------
-if ! command -v gcc &>/dev/null; then
-	die "GCC not found."
+if ! command -v gcc &> /dev/null; then
+  die "GCC not found."
 fi
 GCC_VER=$(gcc --version | head -n1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
 info "Using GCC ${GCC_VER}"
@@ -124,12 +124,12 @@ export KCPPFLAGS="-march=znver4 -mtune=znver4 -O2 -pipe"
 
 info "Starting build ($(nproc) threads)..."
 if ! time nice make -j"$(nproc)" \
-	ARCH=x86_64 \
-	LOCALVERSION="-$LOCALVERSION" \
-	INSTALL_MOD_STRIP=1 \
-	bindeb-pkg |
-	tee ../$BUILD_LOG_FILE; then
-	die "Build failed. Check $SCRIPT_DIR/$BUILD_LOG_FILE for details."
+  ARCH=x86_64 \
+  LOCALVERSION="-$LOCALVERSION" \
+  INSTALL_MOD_STRIP=1 \
+  bindeb-pkg |
+    tee ../$BUILD_LOG_FILE; then
+  die "Build failed. Check $SCRIPT_DIR/$BUILD_LOG_FILE for details."
 fi
 
 #echo performance | sudo tee /sys/devices/system/cpu/cpufreq/policy*/energy_performance_preference

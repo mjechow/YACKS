@@ -10,7 +10,8 @@
   "shfmt.executableArgs": [
     "-i", "2",    // 2 Leerzeichen Einrückung (statt 4 oder Tabs)
     "-ci",        // Switch-Cases einrücken
-    "-bn"         // Geschweifte Klammern auf neue Zeile
+    "-sr",
+    "-kp",
   ],
   
   // Format on Save
