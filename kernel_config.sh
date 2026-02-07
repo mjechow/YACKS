@@ -17,7 +17,7 @@
 #   Sound:     Onboard (Realtek via HDA Intel) – no HDMI audio
 #   Network:   Realtek RTL8125 2.5GbE onboard – WiFi unused, Bluetooth used
 #   OS:        Linux Mint 22.3
-# External Hardware 
+# External Hardware
 #   Keyboard:       Logitech MX Keys (USB receiver)
 #   Mouse:          Asus ROG Keris Wireless Aimpoint (USB receiver)
 #   Monitor:        Dell U2715H
@@ -30,15 +30,15 @@
 # ==============================================================================
 
 # --- Compiler & LTO ----------------------------------------------------------
-./scripts/config --enable  CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE   # -O2
-./scripts/config --disable CONFIG_GCC_PLUGINS                   # unused, saves compile time
-./scripts/config --enable  CONFIG_LTO_GCC
-./scripts/config --enable  CONFIG_LTO
+./scripts/config --enable CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE # -O2
+./scripts/config --disable CONFIG_GCC_PLUGINS                # unused, saves compile time
+./scripts/config --enable CONFIG_LTO_GCC
+./scripts/config --enable CONFIG_LTO
 ./scripts/config --disable CONFIG_CC_OPTIMIZE_FOR_SIZE
 ./scripts/config --disable CONFIG_LTO_CLANG
 
 # --- Module compression (zstd is faster than gzip on modern CPUs) ------------
-./scripts/config --enable  CONFIG_MODULE_COMPRESS_ZSTD
+./scripts/config --enable CONFIG_MODULE_COMPRESS_ZSTD
 ./scripts/config --disable CONFIG_MODULE_COMPRESS_GZIP
 # --- Firmware with zstd compression support ----------------------------------
 ./scripts/config --enable CONFIG_FW_LOADER
@@ -47,8 +47,8 @@
 ./scripts/config --enable CONFIG_FW_LOADER_USER_HELPER
 
 # --- Swap compression (zswap) ------------------------------------------------
-./scripts/config --enable  CONFIG_ZSWAP
-./scripts/config --enable  CONFIG_ZSWAP_DEFAULT_ON
+./scripts/config --enable CONFIG_ZSWAP
+./scripts/config --enable CONFIG_ZSWAP_DEFAULT_ON
 ./scripts/config --set-str CONFIG_ZSWAP_COMPRESSOR_DEFAULT "zstd"
 ./scripts/config --set-str CONFIG_ZSWAP_FRONTSWAP_SHRINKER_DEFAULT "yes"
 
@@ -61,45 +61,45 @@
 #./scripts/config --enable  CONFIG_HZ_PERIODIC
 #./scripts/config --disable CONFIG_NO_HZ_FULL
 ./scripts/config --disable CONFIG_HZ_PERIODIC
-./scripts/config --enable CONFIG_NO_HZ_IDLE        # Better for desktop
-./scripts/config --enable CONFIG_NO_HZ_FULL        # For CPU isolation if needed
-./scripts/config --enable  CONFIG_TICK_CPU_ACCOUNTING
+./scripts/config --enable CONFIG_NO_HZ_IDLE # Better for desktop
+./scripts/config --enable CONFIG_NO_HZ_FULL # For CPU isolation if needed
+./scripts/config --enable CONFIG_TICK_CPU_ACCOUNTING
 ./scripts/config --disable CONFIG_VIRT_CPU_ACCOUNTING_GEN
-./scripts/config --disable CONFIG_NTP_PPS                       # desktop doesn't need PPS
+./scripts/config --disable CONFIG_NTP_PPS # desktop doesn't need PPS
 ./scripts/config --disable CONFIG_SCHED_CORE_SCHED
 ./scripts/config --set-val CONFIG_RCU_BOOST_DELAY 500
 #./scripts/config --enable  CONFIG_RCU_NOCB_CPU # GRUB -rcu_nocbs=0-31
 
 # --- Preemption (dynamic = best of both worlds on desktop) ------------------
-./scripts/config --enable  CONFIG_PREEMPT_DYNAMIC
+./scripts/config --enable CONFIG_PREEMPT_DYNAMIC
 ./scripts/config --disable CONFIG_PREEMPT_VOLUNTARY
 ./scripts/config --disable CONFIG_PREEMPT_NONE
 
 # --- Timer frequency: 1000 Hz for smooth desktop ----------------------------
 ./scripts/config --disable CONFIG_HZ_250
 ./scripts/config --disable CONFIG_HZ_500
-./scripts/config --enable  CONFIG_HZ_1000
+./scripts/config --enable CONFIG_HZ_1000
 ./scripts/config --set-val CONFIG_HZ 1000
 
 # --- CPU: AMD Zen 4 / Ryzen 9 7950X3D ---------------------------------------
 ./scripts/config --enable CONFIG_AMD_X3D_OPTIMIZER
 ./scripts/config --enable CONFIG_SCHED_MC_PRIO
-./scripts/config --enable  CONFIG_SCHED_MC
-./scripts/config --enable  CONFIG_SCHED_SMT
-./scripts/config --enable  CONFIG_CPU_SUP_AMD
+./scripts/config --enable CONFIG_SCHED_MC
+./scripts/config --enable CONFIG_SCHED_SMT
+./scripts/config --enable CONFIG_CPU_SUP_AMD
 ./scripts/config --disable CONFIG_GENERIC_CPU
 ./scripts/config --disable CONFIG_CPU_SUP_INTEL
 ./scripts/config --disable CONFIG_CPU_SUP_CENTAUR
 ./scripts/config --disable CONFIG_CPU_SUP_ZHAOXIN
-./scripts/config --set-val CONFIG_NR_CPUS 32                    # 16 cores / 32 threads
+./scripts/config --set-val CONFIG_NR_CPUS 32 # 16 cores / 32 threads
 ./scripts/config --disable CONFIG_X86_64_V4
-./scripts/config --enable  CONFIG_X86_64_V3                     # AVX-512 (Zen 4<) 
-./scripts/config --enable  CONFIG_X86_32
+./scripts/config --enable CONFIG_X86_64_V3 # AVX-512 (Zen 4<)
+./scripts/config --enable CONFIG_X86_32
 ./scripts/config --disable CONFIG_MAXSMP
-./scripts/config --enable  CONFIG_X86_MCE_AMD
+./scripts/config --enable CONFIG_X86_MCE_AMD
 ./scripts/config --disable CONFIG_X86_ANCIENT_MCE
-./scripts/config --enable  CONFIG_X86_X2APIC^
-./scripts/config --enable  CONFIG_HAVE_PERF_EVENTS_NMI
+./scripts/config --enable CONFIG_X86_X2APIC^
+./scripts/config --enable CONFIG_HAVE_PERF_EVENTS_NMI
 ./scripts/config --enable CONFIG_ACPI_PROCESSOR_IDLE
 ./scripts/config --enable CONFIG_CPU_IDLE_GOV_LADDER
 ./scripts/config --enable CONFIG_CPU_IDLE_GOV_MENU
@@ -112,20 +112,20 @@
 ./scripts/config --enable CONFIG_AMD_IOMMU_V2
 ./scripts/config --enable CONFIG_X86_AMD_PLATFORM_DEVICE
 ./scripts/config --enable CONFIG_PINCTRL_AMD
-./scripts/config --module CONFIG_I2C_PIIX4                      # AMD SMBus (als Modul)
-./scripts/config --module CONFIG_GPIO_AMD_FCH                   # GPIO (selten direkt gebraucht)
+./scripts/config --module CONFIG_I2C_PIIX4    # AMD SMBus (als Modul)
+./scripts/config --module CONFIG_GPIO_AMD_FCH # GPIO (selten direkt gebraucht)
 
 # --- AMD memory encryption (SME / SEV) ---------------------------------------
-./scripts/config --enable  CONFIG_AMD_MEM_ENCRYPT
+./scripts/config --enable CONFIG_AMD_MEM_ENCRYPT
 ./scripts/config --disable CONFIG_AMD_MEM_ENCRYPT_ACTIVE_BY_DEFAULT
 
 # --- CPU frequency scaling: AMD P-State + SCHEDUTIL -------------------------
-./scripts/config --enable  CONFIG_CPU_FREQ
-./scripts/config --enable  CONFIG_X86_AMD_PSTATE
+./scripts/config --enable CONFIG_CPU_FREQ
+./scripts/config --enable CONFIG_X86_AMD_PSTATE
 #../scripts/config --enable CONFIG_X86_AMD_PSTATE_UT     # Optional: Unit Tests
-./scripts/config --enable  CONFIG_CPU_FREQ_GOV_SCHEDUTIL
-./scripts/config --enable  CONFIG_CPU_FREQ_GOV_PERFORMANCE
-./scripts/config --enable  CONFIG_CPU_FREQ_DEFAULT_GOV_SCHEDUTIL
+./scripts/config --enable CONFIG_CPU_FREQ_GOV_SCHEDUTIL
+./scripts/config --enable CONFIG_CPU_FREQ_GOV_PERFORMANCE
+./scripts/config --enable CONFIG_CPU_FREQ_DEFAULT_GOV_SCHEDUTIL
 
 # Disable all other default-governor options (only one can be default)
 ./scripts/config --disable CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE
@@ -138,14 +138,14 @@
 ./scripts/config --disable CONFIG_CPU_FREQ_GOV_ONDEMAND
 ./scripts/config --disable CONFIG_CPU_FREQ_GOV_CONSERVATIVE
 ./scripts/config --disable CONFIG_CPU_FREQ_GOV_POWERSAVE
-./scripts/config --disable CONFIG_X86_ACPI_CPUFREQ              # P-State replaces this
+./scripts/config --disable CONFIG_X86_ACPI_CPUFREQ # P-State replaces this
 
 # --- Hardware monitoring (MSI X670E) -----------------------------------------
 ./scripts/config --enable CONFIG_HWMON
-./scripts/config --module CONFIG_NCT6683                        # Mainboard-Sensor (als Modul)
-./scripts/config --module CONFIG_SENSORS_NCT6687                # Mainboard-Sensor (als Modul)
-./scripts/config --module CONFIG_SENSORS_K10TEMP                # Ryzen temp sensor (als Modul)
-./scripts/config --module CONFIG_SENSORS_FAM15H_POWER           # Ryzen power sensor (als Modul)
+./scripts/config --module CONFIG_NCT6683              # Mainboard-Sensor (als Modul)
+./scripts/config --module CONFIG_SENSORS_NCT6687      # Mainboard-Sensor (als Modul)
+./scripts/config --module CONFIG_SENSORS_K10TEMP      # Ryzen temp sensor (als Modul)
+./scripts/config --module CONFIG_SENSORS_FAM15H_POWER # Ryzen power sensor (als Modul)
 
 # --- Crypto (AES-NI + AVX2 are present on Zen 4) ----------------------------
 ./scripts/config --enable CONFIG_CRYPTO_AES_NI_INTEL
@@ -164,32 +164,32 @@
 ./scripts/config --enable CONFIG_ACPI_BUTTON
 
 # --- PCIe (X670E: PCIe 5.0 host) ---------------------------------------------
-./scripts/config --enable  CONFIG_PCIEAER
-./scripts/config --enable  CONFIG_PCIEPORTBUS
+./scripts/config --enable CONFIG_PCIEAER
+./scripts/config --enable CONFIG_PCIEPORTBUS
 ./scripts/config --disable CONFIG_PCIEASPM
 
 # --- Memory: 64 GB DDR5 -----------------------------------------------------
-./scripts/config --enable  CONFIG_TRANSPARENT_HUGEPAGE
+./scripts/config --enable CONFIG_TRANSPARENT_HUGEPAGE
 ./scripts/config --disable CONFIG_TRANSPARENT_HUGEPAGE_ALWAYS
-./scripts/config --enable  CONFIG_TRANSPARENT_HUGEPAGE_MADVISE  # mutually exclusive with ALWAYS
-./scripts/config --enable  CONFIG_COMPACTION
-./scripts/config --enable  CONFIG_MIGRATION
-./scripts/config --disable CONFIG_KSM                           # 64 GB = no need to deduplicate pages
-./scripts/config --enable  CONFIG_NUMA_BALANCING
-./scripts/config --enable  CONFIG_NUMA_BALANCING_DEFAULT_ENABLED
-./scripts/config --enable  CONFIG_COMPACTION_FREQUENCY
+./scripts/config --enable CONFIG_TRANSPARENT_HUGEPAGE_MADVISE # mutually exclusive with ALWAYS
+./scripts/config --enable CONFIG_COMPACTION
+./scripts/config --enable CONFIG_MIGRATION
+./scripts/config --disable CONFIG_KSM # 64 GB = no need to deduplicate pages
+./scripts/config --enable CONFIG_NUMA_BALANCING
+./scripts/config --enable CONFIG_NUMA_BALANCING_DEFAULT_ENABLED
+./scripts/config --enable CONFIG_COMPACTION_FREQUENCY
 
 # --- GPU: NVIDIA 3070 only – disable everything else ------------------------
-./scripts/config --enable  CONFIG_DRM
-./scripts/config --enable  CONFIG_DRM_NVIDIA
-./scripts/config --enable  CONFIG_DRM_SIMPLEDRM                 # EFI boot frame buffer before NVIDIA inits
-./scripts/config --enable  CONFIG_DRM_FBDEV_EMULATION
+./scripts/config --enable CONFIG_DRM
+./scripts/config --enable CONFIG_DRM_NVIDIA
+./scripts/config --enable CONFIG_DRM_SIMPLEDRM # EFI boot frame buffer before NVIDIA inits
+./scripts/config --enable CONFIG_DRM_FBDEV_EMULATION
 
 # Framebuffer
-./scripts/config --enable  CONFIG_FB
-./scripts/config --enable  CONFIG_FB_EFI
-./scripts/config --enable  CONFIG_FB_VESA
-./scripts/config --disable CONFIG_FB_NVIDIA                     # proprietary driver handles this
+./scripts/config --enable CONFIG_FB
+./scripts/config --enable CONFIG_FB_EFI
+./scripts/config --enable CONFIG_FB_VESA
+./scripts/config --disable CONFIG_FB_NVIDIA # proprietary driver handles this
 
 # AMD GPU drivers – not needed (disabled in BIOS)
 ./scripts/config --disable CONFIG_DRM_AMDGPU
@@ -217,12 +217,12 @@
 ./scripts/config --disable CONFIG_DRM_ACCEL_AMDXDNA
 
 # --- Sound: onboard Realtek via HDA Intel – no HDMI audio -------------------
-./scripts/config --module  CONFIG_SND_HDA_INTEL                 # Als Modul (wird nur bei Bedarf geladen)
-./scripts/config --module  CONFIG_SND_HDA_CODEC_REALTEK         # Als Modul
-./scripts/config --module  CONFIG_SND_HDA_CODEC_GENERIC         # Als Modul
+./scripts/config --module CONFIG_SND_HDA_INTEL         # Als Modul (wird nur bei Bedarf geladen)
+./scripts/config --module CONFIG_SND_HDA_CODEC_REALTEK # Als Modul
+./scripts/config --module CONFIG_SND_HDA_CODEC_GENERIC # Als Modul
 ./scripts/config --disable CONFIG_SND_HDA_CODEC_HDMI
 ./scripts/config --disable CONFIG_SND_HDA_INTEL_HDMI_SILENT_STREAM
-./scripts/config --disable CONFIG_SOUND_HDA_CODEC_HDMI         # belt-and-suspenders
+./scripts/config --disable CONFIG_SOUND_HDA_CODEC_HDMI # belt-and-suspenders
 
 # PipeWire / PulseAudio basics
 ./scripts/config --module CONFIG_SND_TIMER
@@ -241,17 +241,17 @@
 
 # No game controllers on this system
 ./scripts/config --disable CONFIG_INPUT_JOYDEV
-./scripts/config --disable CONFIG_JOYSTICK_XPAD        # Xbox Controller
-./scripts/config --disable CONFIG_HID_PLAYSTATION      # PS5 Controller
-./scripts/config --disable CONFIG_HID_STEAM            # Steam Controller
+./scripts/config --disable CONFIG_JOYSTICK_XPAD   # Xbox Controller
+./scripts/config --disable CONFIG_HID_PLAYSTATION # PS5 Controller
+./scripts/config --disable CONFIG_HID_STEAM       # Steam Controller
 
 # --- Network: Realtek 2.5GbE + Bluetooth – no WiFi --------------------------
-./scripts/config --enable  CONFIG_INET
-./scripts/config --enable  CONFIG_IPV6
-./scripts/config --enable  CONFIG_NET_VENDOR_REALTEK
-./scripts/config --enable  CONFIG_R8169          # ← Mainline Driver (RTL8125 ✓)
-./scripts/config --enable  CONFIG_R8169_LEDS
-./scripts/config --disable CONFIG_R8125          # ← Realtek OOT Driver
+./scripts/config --enable CONFIG_INET
+./scripts/config --enable CONFIG_IPV6
+./scripts/config --enable CONFIG_NET_VENDOR_REALTEK
+./scripts/config --enable CONFIG_R8169 # ← Mainline Driver (RTL8125 ✓)
+./scripts/config --enable CONFIG_R8169_LEDS
+./scripts/config --disable CONFIG_R8125 # ← Realtek OOT Driver
 
 # Disable WiFi stack entirely
 ./scripts/config --disable CONFIG_WIRELESS
@@ -265,35 +265,35 @@
 ./scripts/config --disable CONFIG_MT76
 
 # Bluetooth – benötigt auf diesem System
-./scripts/config --module CONFIG_BT                             # Als Modul (wird nur bei Bedarf geladen)
-./scripts/config --module CONFIG_BT_RFCOMM                      # Serial-Profil (z. B. Tastatur)
-./scripts/config --module CONFIG_BT_HIDP                        # HID-Profil (Maus, Headset)
-./scripts/config --module CONFIG_BT_BNEP                        # Network profile
-./scripts/config --module CONFIG_BT_HCIBTUSB                    # USB Bluetooth adapter
+./scripts/config --module CONFIG_BT          # Als Modul (wird nur bei Bedarf geladen)
+./scripts/config --module CONFIG_BT_RFCOMM   # Serial-Profil (z. B. Tastatur)
+./scripts/config --module CONFIG_BT_HIDP     # HID-Profil (Maus, Headset)
+./scripts/config --module CONFIG_BT_BNEP     # Network profile
+./scripts/config --module CONFIG_BT_HCIBTUSB # USB Bluetooth adapter
 
 # All other NIC vendors
 for v in INTEL 3COM ADAPTEC ALACRITECH AGERE ALTEON AMAZON AMD AQUANTIA ARC ASIX ATHEROS \
-         BROADCOM CADENCE CAVIUM CHELSIO CISCO CORTINA DEC DLINK EMULEX \
-         EZCHIP GOOGLE HUAWEI MARVELL MELLANOX MICREL MICROCHIP MICROSEMI \
-         MYRICOM NATSEMI NETERION NETRONOME NI NVIDIA OKI PACKET_ENGINES \
-         QLOGIC QUALCOMM RDC ROCKER SAMSUNG SEEQ SILAN SIS SMSC STMICRO \
-         SUN SYNOPSYS TEHUTI TI WANGXUN VIA WIZNET XILINX; do
-    ./scripts/config --disable "CONFIG_NET_VENDOR_${v}"
+	BROADCOM CADENCE CAVIUM CHELSIO CISCO CORTINA DEC DLINK EMULEX \
+	EZCHIP GOOGLE HUAWEI MARVELL MELLANOX MICREL MICROCHIP MICROSEMI \
+	MYRICOM NATSEMI NETERION NETRONOME NI NVIDIA OKI PACKET_ENGINES \
+	QLOGIC QUALCOMM RDC ROCKER SAMSUNG SEEQ SILAN SIS SMSC STMICRO \
+	SUN SYNOPSYS TEHUTI TI WANGXUN VIA WIZNET XILINX; do
+	./scripts/config --disable "CONFIG_NET_VENDOR_${v}"
 done
 
 # --- Network performance: BBR + FQ + Cake ------------------------------------
-./scripts/config --enable  CONFIG_NET_SCH_FQ
-./scripts/config --enable  CONFIG_NET_SCH_FQ_CODEL
-./scripts/config --enable  CONFIG_NET_SCH_CAKE
-./scripts/config --enable  CONFIG_TCP_CONG_BBR
+./scripts/config --enable CONFIG_NET_SCH_FQ
+./scripts/config --enable CONFIG_NET_SCH_FQ_CODEL
+./scripts/config --enable CONFIG_NET_SCH_CAKE
+./scripts/config --enable CONFIG_TCP_CONG_BBR
 ./scripts/config --set-str CONFIG_DEFAULT_TCP_CONG "bbr"
 
 # --- Storage: NVMe -----------------------------------------------------------
-./scripts/config --enable  CONFIG_NVME_PCI
-./scripts/config --enable  CONFIG_NVME_CORE
-./scripts/config --enable  CONFIG_BLK_DEV_NVME
-./scripts/config --enable  CONFIG_NVME_MULTIPATH
-./scripts/config --enable  CONFIG_NVME_HWMON
+./scripts/config --enable CONFIG_NVME_PCI
+./scripts/config --enable CONFIG_NVME_CORE
+./scripts/config --enable CONFIG_BLK_DEV_NVME
+./scripts/config --enable CONFIG_NVME_MULTIPATH
+./scripts/config --enable CONFIG_NVME_HWMON
 ./scripts/config --set-val CONFIG_BLK_DEV_NVME_NUM_QUEUES 16 # 16 for PCIe 5.0 x4 SSDs
 
 # SATA für deine zusätzlichen SSDs/HDD
@@ -305,21 +305,21 @@ done
 ./scripts/config --enable CONFIG_BLK_DEV_SD
 
 # --- I/O scheduler: BFQ (good for mixed read/write desktop workloads) -------
-./scripts/config --enable  CONFIG_MQ_IOSCHED_DEADLINE
-./scripts/config --enable  CONFIG_IOSCHED_BFQ
-./scripts/config --enable  CONFIG_BFQ_GROUP_IOSCHED
+./scripts/config --enable CONFIG_MQ_IOSCHED_DEADLINE
+./scripts/config --enable CONFIG_IOSCHED_BFQ
+./scripts/config --enable CONFIG_BFQ_GROUP_IOSCHED
 ./scripts/config --set-str CONFIG_DEFAULT_IOSCHED "bfq"
 
 # --- Filesystems -------------------------------------------------------------
-./scripts/config --enable  CONFIG_EXT4_FS
-./scripts/config --enable  CONFIG_BTRFS_FS
-./scripts/config --enable  CONFIG_VFAT_FS                       # ESP
-./scripts/config --enable  CONFIG_NTFS3_FS                      # modern NTFS driver
-./scripts/config --enable  CONFIG_FUSE_FS                       # AppImage etc.
-./scripts/config --enable  CONFIG_OVERLAY_FS                    # Flatpak / Snap / containers
-./scripts/config --enable  CONFIG_TMPFS
-./scripts/config --enable  CONFIG_PROC_FS
-./scripts/config --enable  CONFIG_SYSFS
+./scripts/config --enable CONFIG_EXT4_FS
+./scripts/config --enable CONFIG_BTRFS_FS
+./scripts/config --enable CONFIG_VFAT_FS    # ESP
+./scripts/config --enable CONFIG_NTFS3_FS   # modern NTFS driver
+./scripts/config --enable CONFIG_FUSE_FS    # AppImage etc.
+./scripts/config --enable CONFIG_OVERLAY_FS # Flatpak / Snap / containers
+./scripts/config --enable CONFIG_TMPFS
+./scripts/config --enable CONFIG_PROC_FS
+./scripts/config --enable CONFIG_SYSFS
 
 # Exotic – not needed
 ./scripts/config --disable CONFIG_REISERFS_FS
@@ -335,8 +335,8 @@ done
 ./scripts/config --enable CONFIG_NAMESPACES
 
 # --- Security: AppArmor (Mint default) – no SELinux -------------------------
-./scripts/config --enable  CONFIG_SECURITY_APPARMOR
-./scripts/config --enable  CONFIG_DEFAULT_SECURITY_APPARMOR
+./scripts/config --enable CONFIG_SECURITY_APPARMOR
+./scripts/config --enable CONFIG_DEFAULT_SECURITY_APPARMOR
 ./scripts/config --disable CONFIG_SECURITY_SELINUX
 # ../scripts/config --disable CONFIG_RETPOLINE
 # ../scripts/config --disable CONFIG_CPU_SPEC_STORE_BYPASS_DISABLE
@@ -345,8 +345,8 @@ done
 # ../scripts/config --disable CONFIG_IMA
 
 # --- VFIO (GPU passthrough / isolation) --------------------------------------
-./scripts/config --module CONFIG_VFIO                           # Als Modul (nur bei Bedarf für VMs)
-./scripts/config --module CONFIG_VFIO_PCI                       # Als Modul
+./scripts/config --module CONFIG_VFIO     # Als Modul (nur bei Bedarf für VMs)
+./scripts/config --module CONFIG_VFIO_PCI # Als Modul
 
 # --- Unused subsystems -------------------------------------------------------
 ./scripts/config --disable CONFIG_HAMRADIO
@@ -360,7 +360,7 @@ done
 ./scripts/config --disable CONFIG_ARCNET
 ./scripts/config --disable CONFIG_ISDN
 ./scripts/config --disable CONFIG_PARPORT
-./scripts/config --disable CONFIG_BLK_DEV_FD                    # floppy
+./scripts/config --disable CONFIG_BLK_DEV_FD # floppy
 
 # --- Unused network protocols ------------------------------------------------
 ./scripts/config --disable CONFIG_IPX
