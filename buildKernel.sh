@@ -124,6 +124,7 @@ if ! time nice make -j"$(nproc)" \
 fi
 
 #echo performance | sudo tee /sys/devices/system/cpu/cpufreq/policy*/energy_performance_preference
+# ll
 
 # --- Done --------------------------------------------------------------------
 success "Build successful!"

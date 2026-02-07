@@ -10,6 +10,9 @@
 #   CPU:       AMD Ryzen 9 7950X3D (Zen 4, 16c/32t)
 #   RAM:       Kingston FURY Beast 64 GB DDR5-6000 CL30-36-36 (KF560C30BBEK2-64) (KF560C30-32 x2)
 #   SSD:       Samsung 970 EVO Plus 1 TB (NVMe PCIe 3.0 x4)
+#   HDD:       Western Digital WD Caviar Green 1TB
+#   SSD2:      Lexar NM620 1TB
+#   SSD3:      Samsung SSD 850 EVO 500GB
 #   GPU:       NVIDIA GeForce RTX 3070 (AMD GPU disabled in BIOS)
 #   Sound:     Onboard (Realtek via HDA Intel) – no HDMI audio
 #   Network:   Realtek RTL8125 2.5GbE onboard – WiFi unused, Bluetooth used
@@ -37,6 +40,13 @@
 # --- Module compression (zstd is faster than gzip on modern CPUs) ------------
 ./scripts/config --enable  CONFIG_MODULE_COMPRESS_ZSTD
 ./scripts/config --disable CONFIG_MODULE_COMPRESS_GZIP
+# --- Firmware with zstd compression support ----------------------------------
+./scripts/config --enable CONFIG_FW_LOADER
+./scripts/config --enable CONFIG_FW_LOADER_COMPRESS
+./scripts/config --enable CONFIG_FW_LOADER_COMPRESS_ZSTD
+./scripts/config --enable CONFIG_FW_LOADER_USER_HELPER
+./scripts/config --enable CONFIG_FW_LOADER_COMPRESS
+./scripts/config --enable CONFIG_FW_LOADER_COMPRESS_ZSTD
 
 # --- Swap compression (zswap) ------------------------------------------------
 ./scripts/config --enable  CONFIG_ZSWAP
@@ -144,6 +154,11 @@
 ./scripts/config --enable CONFIG_CRYPTO_AVX2
 ./scripts/config --enable CONFIG_CRYPTO_SHA256_SSSE3
 
+./scripts/config --module CONFIG_CRYPTO_AES
+./scripts/config --module CONFIG_CRYPTO_XTS
+./scripts/config --module CONFIG_CRYPTO_SHA256
+./scripts/config --module CONFIG_CRYPTO_USER_API_SKCIPHER
+
 # --- ACPI --------------------------------------------------------------------
 ./scripts/config --enable CONFIG_ACPI
 ./scripts/config --enable CONFIG_ACPI_AC
@@ -152,6 +167,7 @@
 
 # --- PCIe (X670E: PCIe 5.0 host) ---------------------------------------------
 ./scripts/config --enable  CONFIG_PCIEAER
+./scripts/config --enable  CONFIG_PCIEPORTBUS
 ./scripts/config --disable CONFIG_PCIEASPM
 
 # --- Memory: 64 GB DDR5 -----------------------------------------------------
@@ -216,6 +232,7 @@
 
 # --- USB ---------------------------------------------------------------------
 ./scripts/config --enable CONFIG_USB_SUPPORT
+./scripts/config --enable CONFIG_USB_STORAGE
 ./scripts/config --enable CONFIG_USB_XHCI_HCD
 ./scripts/config --disable CONFIG_USB_EHCI_HCD
 
@@ -274,11 +291,20 @@ done
 ./scripts/config --set-str CONFIG_DEFAULT_TCP_CONG "bbr"
 
 # --- Storage: NVMe -----------------------------------------------------------
-./scripts/config --enable CONFIG_NVME_CORE
-./scripts/config --enable CONFIG_BLK_DEV_NVME
-./scripts/config --enable CONFIG_NVME_MULTIPATH
-./scripts/config --enable CONFIG_NVME_HWMON
+./scripts/config --enable  CONFIG_NVME_PCI
+./scripts/config --enable  CONFIG_NVME_CORE
+./scripts/config --enable  CONFIG_BLK_DEV_NVME
+./scripts/config --enable  CONFIG_NVME_MULTIPATH
+./scripts/config --enable  CONFIG_NVME_HWMON
 ./scripts/config --set-val CONFIG_BLK_DEV_NVME_NUM_QUEUES 16 # 16 for PCIe 5.0 x4 SSDs
+
+# SATA für deine zusätzlichen SSDs/HDD
+./scripts/config --enable CONFIG_SATA_AHCI
+./scripts/config --enable CONFIG_ATA
+
+# SCSI Layer (für SATA)
+./scripts/config --enable CONFIG_SCSI
+./scripts/config --enable CONFIG_BLK_DEV_SD
 
 # --- I/O scheduler: BFQ (good for mixed read/write desktop workloads) -------
 ./scripts/config --enable  CONFIG_MQ_IOSCHED_DEADLINE
