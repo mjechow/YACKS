@@ -37,9 +37,14 @@
 ./scripts/config --disable CONFIG_CC_OPTIMIZE_FOR_SIZE
 ./scripts/config --disable CONFIG_LTO_CLANG
 
-# --- Module compression (zstd is faster than gzip on modern CPUs) ------------
+# --- Module compression (zstd is faster than gzip on modern CPUs) -----		-------
+./scripts/config --enable CONFIG_MODULE_COMPRESS
+./scripts/config --enable CONFIG_MODULE_COMPRESS_ALL
 ./scripts/config --enable CONFIG_MODULE_COMPRESS_ZSTD
+./scripts/config --disable CONFIG_MODULE_DECOMPRESS
 ./scripts/config --disable CONFIG_MODULE_COMPRESS_GZIP
+./scripts/config --disable CONFIG_MODULE_COMPRESS_XZ
+./scripts/config --disable CONFIG_MODULE_COMPRESS_NONE
 # --- Firmware with zstd compression support ----------------------------------
 ./scripts/config --enable CONFIG_FW_LOADER
 ./scripts/config --enable CONFIG_FW_LOADER_COMPRESS

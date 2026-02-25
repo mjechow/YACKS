@@ -121,19 +121,20 @@ export CC="ccache gcc"
 export CXX="ccache g++"
 export KCFLAGS="-march=znver4 -mtune=znver4 -O2 -pipe"
 export KCPPFLAGS="-march=znver4 -mtune=znver4 -O2 -pipe"
+export N_PROC=$(($(nproc) * 3 / 2)) # Use 1.5x CPU cores for faster builds on I/O bound systems
 
-info "Starting build ($(nproc) threads)..."
-if ! time nice make -j"$(nproc)" \
+info "Starting build ($N_PROC threads)..."
+if ! time nice make -j"$N_PROC" \
   ARCH=x86_64 \
   LOCALVERSION="-$LOCALVERSION" \
   INSTALL_MOD_STRIP=1 \
-  bindeb-pkg |
+  bindeb-pkg KDEB_COMPRESS=none |
     tee ../$BUILD_LOG_FILE; then
   die "Build failed. Check $SCRIPT_DIR/$BUILD_LOG_FILE for details."
 fi
 
-#echo performance | sudo tee /sys/devices/system/cpu/cpufreq/policy*/energy_performance_preference
-# ll
+# time nice make -j"$N_PROC" tools/cpupower ARCH=x86_64 | tee ../tools.log
+# sudo time nice make -j"$N_PROC" tools/cpupower_install
 
 # --- Done --------------------------------------------------------------------
 success "Build successful!"
