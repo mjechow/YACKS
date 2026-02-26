@@ -122,14 +122,14 @@ export CCACHE_DIR="./ccache_kernel"  # separater Cache vom normalen ccache
 export CCACHE_MAXSIZE="10G"
 export CC="ccache gcc"
 export CXX="ccache g++"
-export N_PROC=$(($(nproc) )) # Use max 1.5x CPU cores for faster builds on I/O bound systems
+export N_PROC=$(($(nproc))) # Use max 1.5x CPU cores for faster builds on I/O bound systems
 
 info "Starting build ($N_PROC threads)..."
 if ! time nice make -j"$N_PROC" \
   ARCH=x86_64 \
   LOCALVERSION="-$LOCALVERSION" \
   INSTALL_MOD_STRIP=1 \
-	KCFLAGS="-march=znver4 -mtune=znver4 -pipe" \
+  KCFLAGS="-march=znver4 -mtune=znver4 -pipe" \
   bindeb-pkg | tee ../$BUILD_LOG_FILE; then
   die "Build failed. Check $SCRIPT_DIR/$BUILD_LOG_FILE for details."
 fi
