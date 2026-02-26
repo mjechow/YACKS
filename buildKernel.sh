@@ -8,7 +8,7 @@ KERNEL_CONFIG="${SCRIPT_DIR}/kernel_config.sh"
 
 KERNEL_SRC_DIR="linux"
 BUILD_LOG_FILE="kernelBuild.log"
-LOCALVERSION="$(whoami)-$(hostname -s)"
+LOCALVERSION="$(whoami)-$(hostname -s)-4"
 
 # --- Helpers -----------------------------------------------------------------
 info() { printf "[*] %s\n" "$@"; }
@@ -113,22 +113,25 @@ read -rp "Compile this kernel? [y/N] " confirm
 if ! command -v gcc &> /dev/null; then
   die "GCC not found."
 fi
-GCC_VER=$(gcc --version | head -n1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
-info "Using GCC ${GCC_VER}"
+
+GCC_MAJOR=$(gcc -dumpversion | cut -d. -f1)
+info "Using GCC ${GCC_MAJOR}"
+[[ "$GCC_MAJOR" -lt 13 ]] && die "GCC 13+ required for znver4, found GCC ${GCC_MAJOR}"
 
 # --- Build -------------------------------------------------------------------
+export CCACHE_DIR="./ccache_kernel"  # separater Cache vom normalen ccache
+export CCACHE_MAXSIZE="10G"
 export CC="ccache gcc"
 export CXX="ccache g++"
-export KCFLAGS="-march=znver4 -mtune=znver4 -O2 -pipe"
-export KCPPFLAGS="-march=znver4 -mtune=znver4 -O2 -pipe"
-export N_PROC=$(($(nproc) * 3 / 2)) # Use 1.5x CPU cores for faster builds on I/O bound systems
+export N_PROC=$(($(nproc) )) # Use max 1.5x CPU cores for faster builds on I/O bound systems
 
 info "Starting build ($N_PROC threads)..."
 if ! time nice make -j"$N_PROC" \
   ARCH=x86_64 \
   LOCALVERSION="-$LOCALVERSION" \
   INSTALL_MOD_STRIP=1 \
-  bindeb-pkg KDEB_COMPRESS=none |
+	KCFLAGS="-march=znver4 -mtune=znver4 -pipe" \
+  bindeb-pkg |
     tee ../$BUILD_LOG_FILE; then
   die "Build failed. Check $SCRIPT_DIR/$BUILD_LOG_FILE for details."
 fi
@@ -141,5 +144,5 @@ success "Build successful!"
 cd "$SCRIPT_DIR" || die "cd back to script dir failed."
 echo
 info "Install with:"
-info "  sudo dpkg -i linux-image-$KERNEL_VERSION-$LOCALVERSION*.deb linux-headers-$KERNEL_VERSION-$LOCALVERSION*.deb"
+info "  sudo dpkg -i linux-image-$KERNEL_VERSION-$LOCALVERSION*.deb linux-headers-$KERNEL_VERSION-$LOCALVERSION*.deb linux-libc-$KERNEL_VERSION-$LOCALVERSION*.deb"
 info "  sudo update-grub"

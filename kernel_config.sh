@@ -31,9 +31,10 @@
 
 # --- Compiler & LTO ----------------------------------------------------------
 ./scripts/config --enable CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE # -O2
+./scripts/config --enable CONFIG_LTO_NONE
 ./scripts/config --disable CONFIG_GCC_PLUGINS                # unused, saves compile time
-./scripts/config --enable CONFIG_LTO_GCC
-./scripts/config --enable CONFIG_LTO
+./scripts/config --disable CONFIG_LTO_GCC
+./scripts/config --disable CONFIG_LTO
 ./scripts/config --disable CONFIG_CC_OPTIMIZE_FOR_SIZE
 ./scripts/config --disable CONFIG_LTO_CLANG
 
@@ -55,7 +56,7 @@
 ./scripts/config --enable CONFIG_ZSWAP
 ./scripts/config --enable CONFIG_ZSWAP_DEFAULT_ON
 ./scripts/config --set-str CONFIG_ZSWAP_COMPRESSOR_DEFAULT "zstd"
-./scripts/config --set-str CONFIG_ZSWAP_FRONTSWAP_SHRINKER_DEFAULT "yes"
+./scripts/config --set-str CONFIG_ZSWAP_SHRINKER_DEFAULT "yes"
 
 # --- Initramfs (required by Mint) --------------------------------------------
 ./scripts/config --enable CONFIG_BLK_DEV_INITRD
@@ -67,7 +68,7 @@
 #./scripts/config --disable CONFIG_NO_HZ_FULL
 ./scripts/config --disable CONFIG_HZ_PERIODIC
 ./scripts/config --enable CONFIG_NO_HZ_IDLE # Better for desktop
-./scripts/config --enable CONFIG_NO_HZ_FULL # For CPU isolation if needed
+#./scripts/config --enable CONFIG_NO_HZ_FULL # For CPU isolation if needed
 ./scripts/config --enable CONFIG_TICK_CPU_ACCOUNTING
 ./scripts/config --disable CONFIG_VIRT_CPU_ACCOUNTING_GEN
 ./scripts/config --disable CONFIG_NTP_PPS # desktop doesn't need PPS
@@ -97,13 +98,13 @@
 ./scripts/config --disable CONFIG_CPU_SUP_CENTAUR
 ./scripts/config --disable CONFIG_CPU_SUP_ZHAOXIN
 ./scripts/config --set-val CONFIG_NR_CPUS 32 # 16 cores / 32 threads
-./scripts/config --disable CONFIG_X86_64_V4
-./scripts/config --enable CONFIG_X86_64_V3 # AVX-512 (Zen 4<)
-./scripts/config --enable CONFIG_X86_32
+./scripts/config --disable CONFIG_X86_64_V4  # AVX-512 (Zen 4<)
+./scripts/config --enable CONFIG_X86_64_V3
+./scripts/config --disable CONFIG_X86_32
 ./scripts/config --disable CONFIG_MAXSMP
 ./scripts/config --enable CONFIG_X86_MCE_AMD
 ./scripts/config --disable CONFIG_X86_ANCIENT_MCE
-./scripts/config --enable CONFIG_X86_X2APIC^
+./scripts/config --enable CONFIG_X86_X2APIC
 ./scripts/config --enable CONFIG_HAVE_PERF_EVENTS_NMI
 ./scripts/config --enable CONFIG_ACPI_PROCESSOR_IDLE
 ./scripts/config --enable CONFIG_CPU_IDLE_GOV_LADDER
@@ -164,14 +165,14 @@
 
 # --- ACPI --------------------------------------------------------------------
 ./scripts/config --enable CONFIG_ACPI
-./scripts/config --enable CONFIG_ACPI_AC
-./scripts/config --enable CONFIG_ACPI_BATTERY
+#./scripts/config --enable CONFIG_ACPI_AC
+#./scripts/config --enable CONFIG_ACPI_BATTERY
 ./scripts/config --enable CONFIG_ACPI_BUTTON
 
 # --- PCIe (X670E: PCIe 5.0 host) ---------------------------------------------
 ./scripts/config --enable CONFIG_PCIEAER
 ./scripts/config --enable CONFIG_PCIEPORTBUS
-./scripts/config --disable CONFIG_PCIEASPM
+#./scripts/config --disable CONFIG_PCIEASPM
 
 # --- Memory: 64 GB DDR5 -----------------------------------------------------
 ./scripts/config --enable CONFIG_TRANSPARENT_HUGEPAGE
@@ -182,11 +183,9 @@
 ./scripts/config --disable CONFIG_KSM # 64 GB = no need to deduplicate pages
 ./scripts/config --enable CONFIG_NUMA_BALANCING
 ./scripts/config --enable CONFIG_NUMA_BALANCING_DEFAULT_ENABLED
-./scripts/config --enable CONFIG_COMPACTION_FREQUENCY
 
 # --- GPU: NVIDIA 3070 only – disable everything else ------------------------
 ./scripts/config --enable CONFIG_DRM
-./scripts/config --enable CONFIG_DRM_NVIDIA
 ./scripts/config --enable CONFIG_DRM_SIMPLEDRM # EFI boot frame buffer before NVIDIA inits
 ./scripts/config --enable CONFIG_DRM_FBDEV_EMULATION
 
@@ -237,12 +236,16 @@
 ./scripts/config --enable CONFIG_USB_SUPPORT
 ./scripts/config --enable CONFIG_USB_STORAGE
 ./scripts/config --enable CONFIG_USB_XHCI_HCD
+./scripts/config --enable CONFIG_USB_STORAGE_QUIRKS
+./scripts/config --module CONFIG_USB_PRINTER
 ./scripts/config --disable CONFIG_USB_EHCI_HCD
 
 # --- Input -------------------------------------------------------------------
 ./scripts/config --enable CONFIG_INPUT_EVDEV
 ./scripts/config --module CONFIG_HID_GENERIC
 ./scripts/config --module CONFIG_USB_HID
+./scripts/config --enable CONFIG_MMC_BLOCK
+./scripts/config --module CONFIG_MMC_SDHCI_PCI    # PCI SDHC Host
 
 # No game controllers on this system
 ./scripts/config --disable CONFIG_INPUT_JOYDEV
@@ -272,9 +275,10 @@
 # Bluetooth – benötigt auf diesem System
 ./scripts/config --module CONFIG_BT          # Als Modul (wird nur bei Bedarf geladen)
 ./scripts/config --module CONFIG_BT_RFCOMM   # Serial-Profil (z. B. Tastatur)
-./scripts/config --module CONFIG_BT_HIDP     # HID-Profil (Maus, Headset)
+#./scripts/config --module CONFIG_BT_HIDP     # HID-Profil (Maus, Headset)
 ./scripts/config --module CONFIG_BT_BNEP     # Network profile
 ./scripts/config --module CONFIG_BT_HCIBTUSB # USB Bluetooth adapter
+./scripts/config --enable CONFIG_BT_LE       # Bluetooth Low Energy
 
 # All other NIC vendors
 for v in INTEL 3COM ADAPTEC ALACRITECH AGERE ALTEON AMAZON AMD AQUANTIA ARC ASIX ATHEROS \
@@ -299,7 +303,6 @@ done
 ./scripts/config --enable CONFIG_BLK_DEV_NVME
 ./scripts/config --enable CONFIG_NVME_MULTIPATH
 ./scripts/config --enable CONFIG_NVME_HWMON
-./scripts/config --set-val CONFIG_BLK_DEV_NVME_NUM_QUEUES 16 # 16 for PCIe 5.0 x4 SSDs
 
 # SATA für deine zusätzlichen SSDs/HDD
 ./scripts/config --enable CONFIG_SATA_AHCI
@@ -308,6 +311,7 @@ done
 # SCSI Layer (für SATA)
 ./scripts/config --enable CONFIG_SCSI
 ./scripts/config --enable CONFIG_BLK_DEV_SD
+./scripts/config --enable CONFIG_BLK_DEV_SR # CD/DVD
 
 # --- I/O scheduler: BFQ (good for mixed read/write desktop workloads) -------
 ./scripts/config --enable CONFIG_MQ_IOSCHED_DEADLINE
@@ -325,6 +329,10 @@ done
 ./scripts/config --enable CONFIG_TMPFS
 ./scripts/config --enable CONFIG_PROC_FS
 ./scripts/config --enable CONFIG_SYSFS
+./scripts/config --module CONFIG_EXFAT_FS
+./scripts/config --enable CONFIG_ISO9660_FS
+./scripts/config --enable CONFIG_UDF_FS
+
 
 # Exotic – not needed
 ./scripts/config --disable CONFIG_REISERFS_FS
@@ -367,7 +375,8 @@ done
 ./scripts/config --disable CONFIG_PARPORT
 ./scripts/config --disable CONFIG_BLK_DEV_FD # floppy
 
-# --- Unused network protocols ------------------------------------------------
+# --- network protocols ------------------------------------------------
+./scripts/config --enable  CONFIG_WIREGUARD
 ./scripts/config --disable CONFIG_IPX
 ./scripts/config --disable CONFIG_ATALK
 ./scripts/config --disable CONFIG_X25
@@ -384,7 +393,7 @@ done
 ./scripts/config --disable CONFIG_DEBUG_INFO_DWARF5
 ./scripts/config --disable CONFIG_DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT
 ./scripts/config --disable CONFIG_DEBUG_FS
-./scripts/config --disable CONFIG_FTRACE
+#./scripts/config --disable CONFIG_FTRACE
 ./scripts/config --disable CONFIG_KPROBES
 ./scripts/config --disable CONFIG_KCOV
 ./scripts/config --disable CONFIG_PROVE_LOCKING
