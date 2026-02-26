@@ -8,7 +8,8 @@ KERNEL_CONFIG="${SCRIPT_DIR}/kernel_config.sh"
 
 KERNEL_SRC_DIR="linux"
 BUILD_LOG_FILE="kernelBuild.log"
-LOCALVERSION="$(whoami)-$(hostname -s)-4"
+REV=5
+LOCALVERSION="$(whoami)-$(hostname -s)-$REV"
 
 # --- Helpers -----------------------------------------------------------------
 info() { printf "[*] %s\n" "$@"; }
@@ -27,7 +28,7 @@ die() {
 info "Current kernel: $(uname -r)"
 debug "Script directory: $SCRIPT_DIR"
 cd "$KERNEL_SRC_DIR" 2> /dev/null ||
-     die "Kernel source directory '$KERNEL_SRC_DIR' not found. Did you clone the kernel sources?"
+  die "Kernel source directory '$KERNEL_SRC_DIR' not found. Did you clone the kernel sources?"
 
 # --- Clean & reset git -------------------------------------------------------
 info "Cleanup and checkout..."
@@ -48,8 +49,8 @@ DEB_FILENAME="linux-modules-${KERNEL_VERSION}-${KERNEL_VERSION_LONG}-generic_${K
 
 # Find the exact .deb name (timestamp suffix varies)
 DEB_FILE=$(curl -sL "$UBUNTU_BASE_URL" |
-    grep -Eo "${DEB_FILENAME}.[0-9]{12}_amd64.deb" |
-    head -1) || warn "Could not find .deb for kernel ${KERNEL_VERSION} at ${UBUNTU_BASE_URL}"
+  grep -Eo "${DEB_FILENAME}.[0-9]{12}_amd64.deb" |
+  head -1) || warn "Could not find .deb for kernel ${KERNEL_VERSION} at ${UBUNTU_BASE_URL}"
 
 DEB_URL="${UBUNTU_BASE_URL}/amd64/${DEB_FILE}"
 debug "Ubuntu .deb URL: $DEB_URL"
@@ -59,8 +60,7 @@ CONFIG_INSIDE_DEB="./boot/config-${KERNEL_VERSION}-${KERNEL_VERSION_LONG}-generi
 extract_ubuntu_config() {
   info "Extracting .config from ${DEB_FILE}..."
   dpkg-deb --fsys-tarfile "$DEB_CACHE" |
-      tar xOf - "$CONFIG_INSIDE_DEB" > .config ||
-       die "Failed to extract config from deb"
+    tar xOf - "$CONFIG_INSIDE_DEB" > .config || die "Failed to extract config from deb"
   success "Config extracted."
 }
 
@@ -74,11 +74,11 @@ fetch_ubuntu_config() {
       extract_ubuntu_config
     else
       warn "Download failed ($DEB_URL). Falling back to running kernel config."
-      cp /boot/config-"$(uname -r)" .config
+      cp /boot/config-"$(uname -r)" .config || die "Failed to copy running kernel config"
     fi
   fi
   # Keep a human-readable copy outside the source tree
-  cp .config "$SCRIPT_DIR/config-$KERNEL_VERSION"
+  cp .config "$SCRIPT_DIR/config-$KERNEL_VERSION-$REV" || warn "Failed to save config copy outside source tree"
 }
 
 # --- Generate base config ----------------------------------------------------
@@ -96,27 +96,26 @@ success "Custom options applied."
 info "Validating and updating configuration..."
 make ARCH="$(uname -m)" olddefconfig || die "Configuration processing failed!\n"
 success "Done."
-
-# --- Summary & confirmation --------------------------------------------------
-git --no-pager log -1 --pretty=oneline
 echo
-echo "Target system: $(uname -a)"
-echo "Kernel version: ${KERNEL_VERSION}"
-echo
-read -rp "Compile this kernel? [y/N] " confirm
-[[ "$confirm" =~ ^[Yy]$ ]] || {
-  info "Aborted."
-  exit 0
-}
 
 # --- Verify GCC --------------------------------------------------------------
 if ! command -v gcc &> /dev/null; then
   die "GCC not found."
 fi
-
 GCC_MAJOR=$(gcc -dumpversion | cut -d. -f1)
 info "Using GCC ${GCC_MAJOR}"
 [[ "$GCC_MAJOR" -lt 13 ]] && die "GCC 13+ required for znver4, found GCC ${GCC_MAJOR}"
+
+# --- Summary & confirmation --------------------------------------------------
+echo
+git --no-pager log -1 --pretty=oneline
+echo "Target system: $(uname -a)"
+echo "Kernel version: ${KERNEL_VERSION}"
+read -rp "Compile this kernel? [y/N] " confirm
+[[ "$confirm" =~ ^[Yy]$ ]] || {
+  info "Aborted."
+  exit 0
+}
 
 # --- Build -------------------------------------------------------------------
 export CCACHE_DIR="./ccache_kernel"  # separater Cache vom normalen ccache
@@ -131,8 +130,7 @@ if ! time nice make -j"$N_PROC" \
   LOCALVERSION="-$LOCALVERSION" \
   INSTALL_MOD_STRIP=1 \
 	KCFLAGS="-march=znver4 -mtune=znver4 -pipe" \
-  bindeb-pkg |
-    tee ../$BUILD_LOG_FILE; then
+  bindeb-pkg | tee ../$BUILD_LOG_FILE; then
   die "Build failed. Check $SCRIPT_DIR/$BUILD_LOG_FILE for details."
 fi
 
@@ -144,5 +142,4 @@ success "Build successful!"
 cd "$SCRIPT_DIR" || die "cd back to script dir failed."
 echo
 info "Install with:"
-info "  sudo dpkg -i linux-image-$KERNEL_VERSION-$LOCALVERSION*.deb linux-headers-$KERNEL_VERSION-$LOCALVERSION*.deb linux-libc-$KERNEL_VERSION-$LOCALVERSION*.deb"
-info "  sudo update-grub"
+info "  sudo dpkg -i linux-image-$KERNEL_VERSION-$LOCALVERSION*.deb linux-headers-$KERNEL_VERSION-$LOCALVERSION*.deb linux-libc-dev_$KERNEL_VERSION-*.deb"
