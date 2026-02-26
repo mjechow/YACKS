@@ -333,7 +333,6 @@ done
 ./scripts/config --enable CONFIG_ISO9660_FS
 ./scripts/config --enable CONFIG_UDF_FS
 
-
 # Exotic – not needed
 ./scripts/config --disable CONFIG_REISERFS_FS
 ./scripts/config --disable CONFIG_JFS_FS
