@@ -30,10 +30,11 @@
 # ==============================================================================
 
 # --- Compiler & LTO ----------------------------------------------------------
-./scripts/config --disable CONFIG_LTO_NONE
+./scripts/config --enable  CONFIG_LTO_NONE
+./scripts/config --disable CONFIG_LTO_CLANG
 ./scripts/config --disable CONFIG_LTO_CLANG_FULL
-./scripts/config --enable  CONFIG_LTO_CLANG_THIN   # sets LTO_CLANG implicitly # ThinLTO — faster than full LTO,
-./scripts/config --disable CONFIG_GCC_PLUGINS                # unused, saves compile time
+./scripts/config --disable CONFIG_LTO_CLANG_THIN   # sets LTO_CLANG implicitly # ThinLTO — faster than full LTO,
+./scripts/config --disable CONFIG_GCC_PLUGINS       # unused, saves compile time
 ./scripts/config --disable CONFIG_LTO_GCC
 ./scripts/config --disable CONFIG_LTO
 ./scripts/config --enable  CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE # -O2

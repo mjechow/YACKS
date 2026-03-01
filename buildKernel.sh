@@ -12,17 +12,14 @@ BUILD_LOG_FILE="kernelBuild.log"
 REV=1
 LOCALVERSION="$(whoami)-$(hostname -s)${REV:+-$REV}"
 
-CLANG=clang-19
-
 ARCH="$(uname -m)"
+
 export ARCH
 export CCACHE_DIR="./ccache_kernel"  # separater Cache vom normalen ccache
 export CCACHE_MAXSIZE="10G"
-export CCACHE_CPP2=1            # tell ccache to pass -E output through Clang's preprocessor
-export CCACHE_SLOPPINESS="time_macros,include_file_mtime,pch_defines"
-export CC="ccache $CLANG"
-export LLVM=1
-export LLVM_IAS=1
+export CC="ccache gcc"
+export CXX="ccache g++"
+export LD=ld.bfd
 
 export N_PROC=$(($( nproc) * 1))     # Use max 1.5x CPU cores for faster builds on I/O bound systems
 
@@ -53,11 +50,6 @@ fi
 GCC_MAJOR=$(gcc -dumpversion | cut -d. -f1)
 info "Using GCC ${GCC_MAJOR}"
 [[ "$GCC_MAJOR" -lt 13 ]] && die "GCC 13+ required for znver4, found GCC ${GCC_MAJOR}"
-
-# --- Verify CLANG --------------------------------------------------------------
-if ! command -v "$CLANG" &> /dev/null; then
-  die "$CLANG not found. Install clang + llvm + lld."
-fi
 
 # --- Clean & reset git -------------------------------------------------------
 info "Cleanup and checkout..."
@@ -121,7 +113,7 @@ source "$KERNEL_CONFIG"
 success "Custom options applied."
 
 info "Validating and updating configuration..."
-make CC="$CLANG" olddefconfig || die "Configuration processing failed!\n"
+make CC=gcc olddefconfig || die "Configuration processing failed!\n"
 cp .config "$SCRIPT_DIR/config-$KERNEL_VERSION-$LOCALVERSION"
 success "Done."
 echo
@@ -145,7 +137,6 @@ if ! time nice make -j"$N_PROC" \
     LOCALVERSION="-$LOCALVERSION" \
     INSTALL_MOD_STRIP=1 \
     KCFLAGS="-march=znver4 -mtune=znver4 -pipe" \
-		KAFLAGS="-march=znver4" \
 		V=$VERBOSITY \
     bindeb-pkg 2>&1 | tee ../$BUILD_LOG_FILE; then
     die "Build failed. Check $SCRIPT_DIR/$BUILD_LOG_FILE for details."
