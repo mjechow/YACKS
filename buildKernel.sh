@@ -4,16 +4,15 @@ set -euo pipefail
 
 DEBUG=0
 VERBOSITY=0
+REV=
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 KERNEL_CONFIG="${SCRIPT_DIR}/kernel_config.sh"
-
 KERNEL_SRC_DIR="linux"
 BUILD_LOG_FILE="kernelBuild.log"
-REV=1
 LOCALVERSION="$(whoami)-$(hostname -s)${REV:+-$REV}"
 
 ARCH="$(uname -m)"
-
 export ARCH
 export CCACHE_DIR="./ccache_kernel"  # separater Cache vom normalen ccache
 export CCACHE_MAXSIZE="10G"
@@ -28,7 +27,7 @@ info() { printf "[*] %s\n" "$@"; }
 warn() { printf "[!] %s\n" "$@"; }
 debug() {
   [[ $DEBUG -eq 0 ]] && return 0
-	VERBOSITY=1
+  VERBOSITY=1
   printf "[D] %s\n" "$@"
 }
 success() { printf "[+] %s\n" "$@"; }
@@ -107,15 +106,16 @@ info "Generating base kernel config..."
 make clean
 fetch_ubuntu_config
 
-info "Applying custom kernel options..."
-# shellcheck source=kernel_config.sh
-source "$KERNEL_CONFIG"
-success "Custom options applied."
-
 info "Validating and updating configuration..."
 make CC=gcc olddefconfig || die "Configuration processing failed!\n"
 cp .config "$SCRIPT_DIR/config-$KERNEL_VERSION-$LOCALVERSION"
 success "Done."
+echo
+
+info "Applying custom kernel options..."
+# shellcheck source=kernel_config.sh
+source "$KERNEL_CONFIG"
+success "Custom options applied."
 echo
 
 # --- Summary & confirmation --------------------------------------------------
@@ -137,7 +137,7 @@ if ! time nice make -j"$N_PROC" \
     LOCALVERSION="-$LOCALVERSION" \
     INSTALL_MOD_STRIP=1 \
     KCFLAGS="-march=znver4 -mtune=znver4 -pipe" \
-		V=$VERBOSITY \
+  V=$VERBOSITY \
     bindeb-pkg 2>&1 | tee ../$BUILD_LOG_FILE; then
     die "Build failed. Check $SCRIPT_DIR/$BUILD_LOG_FILE for details."
 fi
