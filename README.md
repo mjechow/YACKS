@@ -29,3 +29,10 @@ At last, it offers the installation of the new build kernel dep packages.
 - who is it for
 - how do i use it
 - <https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/>
+
+sudo apt install -y build-essential gcc make binutils \
+  gcc-13 g++-13 libc6-dev libncurses-dev bison flex \
+  libssl-dev libelf-dev bc pahole cpio
+
+sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100
+sudo update-alternatives --install /usr/bin/ld ld /usr/bin/ld.bfd 100

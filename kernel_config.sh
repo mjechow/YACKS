@@ -29,19 +29,28 @@
 #   Smartphone:     Samsung S20FE
 # ==============================================================================
 
+echo "Kernel config here!"
+
 # --- Compiler & LTO ----------------------------------------------------------
-./scripts/config --enable CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE # -O2
-./scripts/config --enable CONFIG_LTO_NONE
-./scripts/config --disable CONFIG_GCC_PLUGINS                # unused, saves compile time
+./scripts/config --enable  CONFIG_LTO_NONE
+./scripts/config --disable CONFIG_LTO_CLANG
+./scripts/config --disable CONFIG_LTO_CLANG_FULL
+./scripts/config --disable CONFIG_LTO_CLANG_THIN   # sets LTO_CLANG implicitly # ThinLTO — faster than full LTO,
+./scripts/config --disable CONFIG_GCC_PLUGINS       # unused, saves compile time
 ./scripts/config --disable CONFIG_LTO_GCC
 ./scripts/config --disable CONFIG_LTO
+./scripts/config --enable  CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE # -O2
 ./scripts/config --disable CONFIG_CC_OPTIMIZE_FOR_SIZE
-./scripts/config --disable CONFIG_LTO_CLANG
+
+# CFI — Clang kernel Control Flow Integrity (security + sometimes perf)
+# Only available with LLVM builds:
+./scripts/config --disable CONFIG_CFI_CLANG        # optional but CachyOS includes it
+./scripts/config --disable CONFIG_CFI_PERMISSIVE  # enforce, don't just warn
 
 # --- Module compression (zstd is faster than gzip on modern CPUs) -----		-------
-./scripts/config --enable CONFIG_MODULE_COMPRESS
-./scripts/config --enable CONFIG_MODULE_COMPRESS_ALL
-./scripts/config --enable CONFIG_MODULE_COMPRESS_ZSTD
+./scripts/config --enable  CONFIG_MODULE_COMPRESS
+./scripts/config --enable  CONFIG_MODULE_COMPRESS_ALL
+./scripts/config --enable  CONFIG_MODULE_COMPRESS_ZSTD
 ./scripts/config --disable CONFIG_MODULE_DECOMPRESS
 ./scripts/config --disable CONFIG_MODULE_COMPRESS_GZIP
 ./scripts/config --disable CONFIG_MODULE_COMPRESS_XZ
@@ -64,12 +73,23 @@
 ./scripts/config --enable CONFIG_RD_ZSTD
 
 # --- Timer & scheduling ------------------------------------------------------
-./scripts/config --enable CONFIG_TICK_CPU_ACCOUNTING
+./scripts/config --enable  CONFIG_TICK_CPU_ACCOUNTING
 ./scripts/config --disable CONFIG_VIRT_CPU_ACCOUNTING_GEN
 ./scripts/config --disable CONFIG_NTP_PPS # desktop doesn't need PPS
-./scripts/config --disable CONFIG_SCHED_CORE_SCHED
 ./scripts/config --set-val CONFIG_RCU_BOOST_DELAY 500
-#./scripts/config --enable  CONFIG_RCU_NOCB_CPU # GRUB -rcu_nocbs=0-31
+./scripts/config --disable CONFIG_SCHED_CLASS_EXT
+./scripts/config --disable CONFIG_SCHED_CORE
+./scripts/config --disable CONFIG_BPF
+./scripts/config --disable CONFIG_BPF_SYSCALL
+./scripts/config --disable CONFIG_BPF_JIT
+./scripts/config --disable CONFIG_BPF_JIT_DEFAULT_ON
+
+# Per-VMA locking — reduces mmap_lock contention (upstream since 6.3)
+./scripts/config --enable CONFIG_PER_VMA_LOCK
+# mglru (Multi-Gen LRU) — better page reclaim, upstream since 6.1
+./scripts/config --enable CONFIG_LRU_GEN
+./scripts/config --enable CONFIG_LRU_GEN_ENABLED
+#./scripts/config --enable CONFIG_LRU_GEN_STATS   # optional, adds overhead
 
 # --- Preemption (dynamic = best of both worlds on desktop) ------------------
 ./scripts/config --enable CONFIG_PREEMPT_DYNAMIC
@@ -88,27 +108,27 @@
 ./scripts/config --set-val CONFIG_HZ 1000
 
 # --- CPU: AMD Zen 4 / Ryzen 9 7950X3D ---------------------------------------
-./scripts/config --enable CONFIG_AMD_X3D_OPTIMIZER
-./scripts/config --enable CONFIG_SCHED_MC_PRIO
-./scripts/config --enable CONFIG_SCHED_MC
-./scripts/config --enable CONFIG_SCHED_SMT
-./scripts/config --enable CONFIG_CPU_SUP_AMD
-./scripts/config --disable CONFIG_GENERIC_CPU
+./scripts/config --enable  CONFIG_AMD_X3D_OPTIMIZER
+./scripts/config --enable  CONFIG_SCHED_MC_PRIO
+./scripts/config --enable  CONFIG_SCHED_MC
+./scripts/config --enable  CONFIG_SCHED_SMT
+./scripts/config --enable  CONFIG_CPU_SUP_AMD
 ./scripts/config --disable CONFIG_CPU_SUP_INTEL
 ./scripts/config --disable CONFIG_CPU_SUP_CENTAUR
 ./scripts/config --disable CONFIG_CPU_SUP_ZHAOXIN
 ./scripts/config --set-val CONFIG_NR_CPUS 32 # 16 cores / 32 threads
+./scripts/config --disable CONFIG_GENERIC_CPU
+./scripts/config --disable CONFIG_X86_64_V3 # use -march=znver4 instead
 ./scripts/config --disable CONFIG_X86_64_V4  # AVX-512 (Zen 4<)
-./scripts/config --enable CONFIG_X86_64_V3
 ./scripts/config --disable CONFIG_X86_32
 ./scripts/config --disable CONFIG_MAXSMP
-./scripts/config --enable CONFIG_X86_MCE_AMD
+./scripts/config --enable  CONFIG_X86_MCE_AMD
 ./scripts/config --disable CONFIG_X86_ANCIENT_MCE
-./scripts/config --enable CONFIG_X86_X2APIC
-./scripts/config --enable CONFIG_HAVE_PERF_EVENTS_NMI
-./scripts/config --enable CONFIG_ACPI_PROCESSOR_IDLE
-./scripts/config --enable CONFIG_CPU_IDLE_GOV_LADDER
-./scripts/config --enable CONFIG_CPU_IDLE_GOV_MENU
+./scripts/config --enable  CONFIG_X86_X2APIC
+./scripts/config --enable  CONFIG_HAVE_PERF_EVENTS_NMI
+./scripts/config --enable  CONFIG_ACPI_PROCESSOR_IDLE
+./scripts/config --enable  CONFIG_CPU_IDLE_GOV_LADDER
+./scripts/config --enable  CONFIG_CPU_IDLE_GOV_MENU
 
 # --- AMD platform / SMBus / GPIO ---------------------------------------------
 ./scripts/config --enable CONFIG_AMD_NB
@@ -122,7 +142,7 @@
 ./scripts/config --module CONFIG_GPIO_AMD_FCH # GPIO (selten direkt gebraucht)
 
 # --- AMD memory encryption (SME / SEV) ---------------------------------------
-./scripts/config --enable CONFIG_AMD_MEM_ENCRYPT
+./scripts/config --enable  CONFIG_AMD_MEM_ENCRYPT
 ./scripts/config --disable CONFIG_AMD_MEM_ENCRYPT_ACTIVE_BY_DEFAULT
 
 # --- CPU frequency scaling: AMD P-State + SCHEDUTIL -------------------------
@@ -174,19 +194,23 @@
 #./scripts/config --disable CONFIG_PCIEASPM
 
 # --- Memory: 64 GB DDR5 -----------------------------------------------------
-./scripts/config --enable CONFIG_TRANSPARENT_HUGEPAGE
+./scripts/config --enable  CONFIG_TRANSPARENT_HUGEPAGE
 ./scripts/config --disable CONFIG_TRANSPARENT_HUGEPAGE_ALWAYS
-./scripts/config --enable CONFIG_TRANSPARENT_HUGEPAGE_MADVISE # mutually exclusive with ALWAYS
-./scripts/config --enable CONFIG_COMPACTION
-./scripts/config --enable CONFIG_MIGRATION
+./scripts/config --enable  CONFIG_TRANSPARENT_HUGEPAGE_MADVISE # mutually exclusive with ALWAYS
+./scripts/config --enable  CONFIG_COMPACTION
+./scripts/config --enable  CONFIG_MIGRATION
 ./scripts/config --disable CONFIG_KSM # 64 GB = no need to deduplicate pages
-./scripts/config --enable CONFIG_NUMA_BALANCING
-./scripts/config --enable CONFIG_NUMA_BALANCING_DEFAULT_ENABLED
+./scripts/config --enable  CONFIG_NUMA_BALANCING
+./scripts/config --enable  CONFIG_NUMA_BALANCING_DEFAULT_ENABLED
 
 # --- GPU: NVIDIA 3070 only – disable everything else ------------------------
 ./scripts/config --enable CONFIG_DRM
 ./scripts/config --enable CONFIG_DRM_SIMPLEDRM # EFI boot frame buffer before NVIDIA inits
 ./scripts/config --enable CONFIG_DRM_FBDEV_EMULATION
+# === NVIDIA-only: Force disable nouveau completely (LLVM LTO fix) ===
+./scripts/config --disable CONFIG_DRM_NOUVEAU
+./scripts/config --disable CONFIG_NOUVEAU_PLATFORM_DRIVER
+./scripts/config --disable CONFIG_DRM_NOUVEAU_BACKLIGHT
 
 # Framebuffer
 ./scripts/config --enable CONFIG_FB
@@ -220,9 +244,9 @@
 ./scripts/config --disable CONFIG_DRM_ACCEL_AMDXDNA
 
 # --- Sound: onboard Realtek via HDA Intel – no HDMI audio -------------------
-./scripts/config --module CONFIG_SND_HDA_INTEL         # Als Modul (wird nur bei Bedarf geladen)
-./scripts/config --module CONFIG_SND_HDA_CODEC_REALTEK # Als Modul
-./scripts/config --module CONFIG_SND_HDA_CODEC_GENERIC # Als Modul
+./scripts/config --module  CONFIG_SND_HDA_INTEL         # Als Modul (wird nur bei Bedarf geladen)
+./scripts/config --module  CONFIG_SND_HDA_CODEC_REALTEK # Als Modul
+./scripts/config --module  CONFIG_SND_HDA_CODEC_GENERIC # Als Modul
 ./scripts/config --disable CONFIG_SND_HDA_CODEC_HDMI
 ./scripts/config --disable CONFIG_SND_HDA_INTEL_HDMI_SILENT_STREAM
 ./scripts/config --disable CONFIG_SOUND_HDA_CODEC_HDMI # belt-and-suspenders
@@ -252,7 +276,7 @@
 ./scripts/config --disable CONFIG_HID_PLAYSTATION # PS5 Controller
 ./scripts/config --disable CONFIG_HID_STEAM       # Steam Controller
 
-# --- Network: Realtek 2.5GbE + Bluetooth – no WiFi --------------------------
+# --- Network: Realtek 2.5GbE – no WiFi --------------------------
 ./scripts/config --enable CONFIG_INET
 ./scripts/config --enable CONFIG_IPV6
 ./scripts/config --enable CONFIG_NET_VENDOR_REALTEK
@@ -274,7 +298,7 @@
 # Bluetooth – benötigt auf diesem System
 ./scripts/config --module CONFIG_BT          # Als Modul (wird nur bei Bedarf geladen)
 ./scripts/config --module CONFIG_BT_RFCOMM   # Serial-Profil (z. B. Tastatur)
-#./scripts/config --module CONFIG_BT_HIDP     # HID-Profil (Maus, Headset)
+./scripts/config --module CONFIG_BT_HIDP     # HID over Bluetooth — needed for BT headsets
 ./scripts/config --module CONFIG_BT_BNEP     # Network profile
 ./scripts/config --module CONFIG_BT_HCIBTUSB # USB Bluetooth adapter
 ./scripts/config --enable CONFIG_BT_LE       # Bluetooth Low Energy
@@ -346,8 +370,8 @@ done
 ./scripts/config --enable CONFIG_NAMESPACES
 
 # --- Security: AppArmor (Mint default) – no SELinux -------------------------
-./scripts/config --enable CONFIG_SECURITY_APPARMOR
-./scripts/config --enable CONFIG_DEFAULT_SECURITY_APPARMOR
+./scripts/config --enable  CONFIG_SECURITY_APPARMOR
+./scripts/config --enable  CONFIG_DEFAULT_SECURITY_APPARMOR
 ./scripts/config --disable CONFIG_SECURITY_SELINUX
 # ../scripts/config --disable CONFIG_RETPOLINE
 # ../scripts/config --disable CONFIG_CPU_SPEC_STORE_BYPASS_DISABLE
@@ -385,14 +409,20 @@ done
 ./scripts/config --disable CONFIG_BOOT_PRINTK_DELAY
 
 # --- Debug / tracing: all off for production ---------------------------------
+# required by BPF + sched-ext tracing
+./scripts/config --disable CONFIG_DEBUG_FS
+./scripts/config --disable CONFIG_FTRACE
+./scripts/config --disable CONFIG_KPROBES
+./scripts/config --disable CONFIG_DEBUG_INFO_BTF
+
 ./scripts/config --disable CONFIG_DEBUG_KERNEL
 ./scripts/config --disable CONFIG_DEBUG_INFO
 ./scripts/config --disable CONFIG_DEBUG_INFO_DWARF4
 ./scripts/config --disable CONFIG_DEBUG_INFO_DWARF5
 ./scripts/config --disable CONFIG_DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT
-./scripts/config --disable CONFIG_DEBUG_FS
-#./scripts/config --disable CONFIG_FTRACE
-./scripts/config --disable CONFIG_KPROBES
+./scripts/config --disable CONFIG_DEBUG_KMAP_LOCAL_FORCE_MAP
+./scripts/config --disable CONFIG_DEBUG_CGROUP_REF
+./scripts/config --disable CONFIG_DEBUG_OBJECTS
 ./scripts/config --disable CONFIG_KCOV
 ./scripts/config --disable CONFIG_PROVE_LOCKING
 ./scripts/config --disable CONFIG_LOCK_DEBUGGING_SUPPORT
@@ -400,12 +430,13 @@ done
 ./scripts/config --disable CONFIG_KGDB
 ./scripts/config --disable CONFIG_UBSAN
 ./scripts/config --disable CONFIG_KASAN
-./scripts/config --disable CONFIG_DEBUG_KMAP_LOCAL_FORCE_MAP
 ./scripts/config --disable CONFIG_PAGE_OWNER
-./scripts/config --disable CONFIG_DEBUG_OBJECTS
 ./scripts/config --disable CONFIG_DRM_DEBUG_DP_MST_TOPOLOGY_REFS
 ./scripts/config --disable CONFIG_DRM_DEBUG_MODESET_LOCK
 ./scripts/config --disable CONFIG_DRM_PANIC_DEBUG
+./scripts/config --disable CONFIG_KPROBE_EVENTS
+./scripts/config --disable CONFIG_SAMPLE_KPROBES
+./scripts/config --disable CONFIG_FUNCTION_ERROR_INJECTION
 
 # --- Module signing: clear keys (custom build, not distro-signed) -----------
 ./scripts/config --set-str CONFIG_SYSTEM_REVOCATION_KEYS ""

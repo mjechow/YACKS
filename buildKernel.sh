@@ -3,19 +3,31 @@
 set -euo pipefail
 
 DEBUG=0
+VERBOSITY=0
+REV=
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 KERNEL_CONFIG="${SCRIPT_DIR}/kernel_config.sh"
-
 KERNEL_SRC_DIR="linux"
 BUILD_LOG_FILE="kernelBuild.log"
-REV= # i.e. use -5
-LOCALVERSION="$(whoami)-$(hostname -s)$REV"
+LOCALVERSION="$(whoami)-$(hostname -s)${REV:+-$REV}"
+
+ARCH="$(uname -m)"
+export ARCH
+export CCACHE_DIR="./ccache_kernel"  # separater Cache vom normalen ccache
+export CCACHE_MAXSIZE="10G"
+export CC="ccache gcc"
+export CXX="ccache g++"
+export LD=ld.bfd
+
+export N_PROC=$(($( nproc) * 1))     # Use max 1.5x CPU cores for faster builds on I/O bound systems
 
 # --- Helpers -----------------------------------------------------------------
 info() { printf "[*] %s\n" "$@"; }
 warn() { printf "[!] %s\n" "$@"; }
 debug() {
   [[ $DEBUG -eq 0 ]] && return 0
+  VERBOSITY=1
   printf "[D] %s\n" "$@"
 }
 success() { printf "[+] %s\n" "$@"; }
@@ -42,11 +54,11 @@ info "Using GCC ${GCC_MAJOR}"
 info "Cleanup and checkout..."
 make distclean || die "make distclean failed – is this a valid kernel source tree?"
 git reset --hard
-git clean -df
+git clean -dfx
 
 # --- Determine kernel version from git tag -----------------------------------
 KERNEL_VERSION_DIR=$(git tag --merged HEAD --sort=taggerdate | tail -n1)
-KERNEL_VERSION="${KERNEL_VERSION_DIR#v}" # strip leading 'v'
+KERNEL_VERSION="${KERNEL_VERSION_DIR#v}" # strip leading 'v'; only adds hyphen if REV is set
 
 # --- Download Ubuntu mainline .deb to extract its .config --------------------
 UBUNTU_BASE_URL="https://kernel.ubuntu.com/~kernel-ppa/mainline/${KERNEL_VERSION_DIR}"
@@ -77,7 +89,7 @@ fetch_ubuntu_config() {
     extract_ubuntu_config
   else
     info "Downloading kernel ${KERNEL_VERSION} config from Ubuntu mainline..."
-    if [[ -n "$DEB_CACHE" ]] && wget -O "$DEB_CACHE" -q "$DEB_URL"; then
+    if [[ -n "$DEB_CACHE" ]] && wget --show-progress -O "$DEB_CACHE" -q "$DEB_URL"; then
       success "Download complete."
       extract_ubuntu_config
     else
@@ -86,24 +98,24 @@ fetch_ubuntu_config() {
     fi
   fi
   # Keep a human-readable copy outside the source tree
-  cp .config "$SCRIPT_DIR/config-$KERNEL_VERSION$REV" || warn "Failed to save config copy outside source tree"
+  cp .config "$SCRIPT_DIR/config-$KERNEL_VERSION${REV:+-$REV}" || warn "Failed to save config copy outside source tree"
 }
 
 # --- Generate base config ----------------------------------------------------
 info "Generating base kernel config..."
 make clean
 fetch_ubuntu_config
-make ARCH="$(uname -m)" olddefconfig # fill in defaults for new symbols
+
+info "Validating and updating configuration..."
+make CC=gcc olddefconfig || die "Configuration processing failed!\n"
+cp .config "$SCRIPT_DIR/config-$KERNEL_VERSION-$LOCALVERSION"
+success "Done."
+echo
 
 info "Applying custom kernel options..."
 # shellcheck source=kernel_config.sh
 source "$KERNEL_CONFIG"
-cp .config "$SCRIPT_DIR/config-$KERNEL_VERSION-$LOCALVERSION"
 success "Custom options applied."
-
-info "Validating and updating configuration..."
-make ARCH="$(uname -m)" olddefconfig || die "Configuration processing failed!\n"
-success "Done."
 echo
 
 # --- Summary & confirmation --------------------------------------------------
@@ -118,11 +130,6 @@ read -rp "Compile this kernel? [y/N] " confirm
 }
 
 # --- Build -------------------------------------------------------------------
-export CCACHE_DIR="./ccache_kernel"  # separater Cache vom normalen ccache
-export CCACHE_MAXSIZE="10G"
-export CC="ccache gcc"
-export CXX="ccache g++"
-export N_PROC=$(( $(nproc) ))   # Use max 1.5x CPU cores for faster builds on I/O bound systems
 
 info "Starting build ($N_PROC threads)..."
 if ! time nice make -j"$N_PROC" \
@@ -130,8 +137,8 @@ if ! time nice make -j"$N_PROC" \
     LOCALVERSION="-$LOCALVERSION" \
     INSTALL_MOD_STRIP=1 \
     KCFLAGS="-march=znver4 -mtune=znver4 -pipe" \
-    bindeb-pkg | tee ../$BUILD_LOG_FILE
-then
+  V=$VERBOSITY \
+    bindeb-pkg 2>&1 | tee ../$BUILD_LOG_FILE; then
     die "Build failed. Check $SCRIPT_DIR/$BUILD_LOG_FILE for details."
 fi
 
