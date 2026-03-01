@@ -8,8 +8,8 @@ KERNEL_CONFIG="${SCRIPT_DIR}/kernel_config.sh"
 
 KERNEL_SRC_DIR="linux"
 BUILD_LOG_FILE="kernelBuild.log"
-REV=5
-LOCALVERSION="$(whoami)-$(hostname -s)-$REV"
+REV= # i.e. use -5
+LOCALVERSION="$(whoami)-$(hostname -s)$REV"
 
 # --- Helpers -----------------------------------------------------------------
 info() { printf "[*] %s\n" "$@"; }
@@ -29,6 +29,14 @@ info "Current kernel: $(uname -r)"
 debug "Script directory: $SCRIPT_DIR"
 cd "$KERNEL_SRC_DIR" 2> /dev/null ||
   die "Kernel source directory '$KERNEL_SRC_DIR' not found. Did you clone the kernel sources?"
+
+# --- Verify GCC --------------------------------------------------------------
+if ! command -v gcc &> /dev/null; then
+  die "GCC not found."
+fi
+GCC_MAJOR=$(gcc -dumpversion | cut -d. -f1)
+info "Using GCC ${GCC_MAJOR}"
+[[ "$GCC_MAJOR" -lt 13 ]] && die "GCC 13+ required for znver4, found GCC ${GCC_MAJOR}"
 
 # --- Clean & reset git -------------------------------------------------------
 info "Cleanup and checkout..."
@@ -78,7 +86,7 @@ fetch_ubuntu_config() {
     fi
   fi
   # Keep a human-readable copy outside the source tree
-  cp .config "$SCRIPT_DIR/config-$KERNEL_VERSION-$REV" || warn "Failed to save config copy outside source tree"
+  cp .config "$SCRIPT_DIR/config-$KERNEL_VERSION$REV" || warn "Failed to save config copy outside source tree"
 }
 
 # --- Generate base config ----------------------------------------------------
@@ -98,14 +106,6 @@ make ARCH="$(uname -m)" olddefconfig || die "Configuration processing failed!\n"
 success "Done."
 echo
 
-# --- Verify GCC --------------------------------------------------------------
-if ! command -v gcc &> /dev/null; then
-  die "GCC not found."
-fi
-GCC_MAJOR=$(gcc -dumpversion | cut -d. -f1)
-info "Using GCC ${GCC_MAJOR}"
-[[ "$GCC_MAJOR" -lt 13 ]] && die "GCC 13+ required for znver4, found GCC ${GCC_MAJOR}"
-
 # --- Summary & confirmation --------------------------------------------------
 echo
 git --no-pager log -1 --pretty=oneline
@@ -122,16 +122,17 @@ export CCACHE_DIR="./ccache_kernel"  # separater Cache vom normalen ccache
 export CCACHE_MAXSIZE="10G"
 export CC="ccache gcc"
 export CXX="ccache g++"
-export N_PROC=$(($(nproc))) # Use max 1.5x CPU cores for faster builds on I/O bound systems
+export N_PROC=$(( $(nproc) ))   # Use max 1.5x CPU cores for faster builds on I/O bound systems
 
 info "Starting build ($N_PROC threads)..."
 if ! time nice make -j"$N_PROC" \
-  ARCH=x86_64 \
-  LOCALVERSION="-$LOCALVERSION" \
-  INSTALL_MOD_STRIP=1 \
-  KCFLAGS="-march=znver4 -mtune=znver4 -pipe" \
-  bindeb-pkg | tee ../$BUILD_LOG_FILE; then
-  die "Build failed. Check $SCRIPT_DIR/$BUILD_LOG_FILE for details."
+    ARCH=x86_64 \
+    LOCALVERSION="-$LOCALVERSION" \
+    INSTALL_MOD_STRIP=1 \
+    KCFLAGS="-march=znver4 -mtune=znver4 -pipe" \
+    bindeb-pkg | tee ../$BUILD_LOG_FILE
+then
+    die "Build failed. Check $SCRIPT_DIR/$BUILD_LOG_FILE for details."
 fi
 
 # time nice make -j"$N_PROC" tools/cpupower ARCH=x86_64 | tee ../tools.log
