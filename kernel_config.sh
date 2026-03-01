@@ -30,13 +30,19 @@
 # ==============================================================================
 
 # --- Compiler & LTO ----------------------------------------------------------
-./scripts/config --enable CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE # -O2
-./scripts/config --enable CONFIG_LTO_NONE
+./scripts/config --disable CONFIG_LTO_NONE
+./scripts/config --disable CONFIG_LTO_CLANG_FULL
+./scripts/config --enable  CONFIG_LTO_CLANG_THIN   # sets LTO_CLANG implicitly # ThinLTO — faster than full LTO,
 ./scripts/config --disable CONFIG_GCC_PLUGINS                # unused, saves compile time
 ./scripts/config --disable CONFIG_LTO_GCC
 ./scripts/config --disable CONFIG_LTO
+./scripts/config --enable  CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE # -O2
 ./scripts/config --disable CONFIG_CC_OPTIMIZE_FOR_SIZE
-./scripts/config --disable CONFIG_LTO_CLANG
+
+# CFI — Clang kernel Control Flow Integrity (security + sometimes perf)
+# Only available with LLVM builds:
+./scripts/config --disable CONFIG_CFI_CLANG        # optional but CachyOS includes it
+./scripts/config --disable CONFIG_CFI_PERMISSIVE  # enforce, don't just warn
 
 # --- Module compression (zstd is faster than gzip on modern CPUs) -----		-------
 ./scripts/config --enable CONFIG_MODULE_COMPRESS
@@ -67,9 +73,21 @@
 ./scripts/config --enable CONFIG_TICK_CPU_ACCOUNTING
 ./scripts/config --disable CONFIG_VIRT_CPU_ACCOUNTING_GEN
 ./scripts/config --disable CONFIG_NTP_PPS # desktop doesn't need PPS
-./scripts/config --disable CONFIG_SCHED_CORE_SCHED
 ./scripts/config --set-val CONFIG_RCU_BOOST_DELAY 500
 #./scripts/config --enable  CONFIG_RCU_NOCB_CPU # GRUB -rcu_nocbs=0-31
+./scripts/config --enable  CONFIG_SCHED_CLASS_EXT   # sched-ext framework
+#./scripts/config --disable CONFIG_SCHED_CORE_SCHED
+./scripts/config --disable CONFIG_SCHED_CORE
+./scripts/config --enable  CONFIG_BPF_SYSCALL
+./scripts/config --enable  CONFIG_BPF_JIT
+./scripts/config --enable  CONFIG_BPF_JIT_DEFAULT_ON
+
+# Per-VMA locking — reduces mmap_lock contention (upstream since 6.3)
+./scripts/config --enable CONFIG_PER_VMA_LOCK
+# mglru (Multi-Gen LRU) — better page reclaim, upstream since 6.1
+./scripts/config --enable CONFIG_LRU_GEN
+./scripts/config --enable CONFIG_LRU_GEN_ENABLED
+#./scripts/config --enable CONFIG_LRU_GEN_STATS   # optional, adds overhead
 
 # --- Preemption (dynamic = best of both worlds on desktop) ------------------
 ./scripts/config --enable CONFIG_PREEMPT_DYNAMIC
@@ -93,13 +111,13 @@
 ./scripts/config --enable CONFIG_SCHED_MC
 ./scripts/config --enable CONFIG_SCHED_SMT
 ./scripts/config --enable CONFIG_CPU_SUP_AMD
-./scripts/config --disable CONFIG_GENERIC_CPU
 ./scripts/config --disable CONFIG_CPU_SUP_INTEL
 ./scripts/config --disable CONFIG_CPU_SUP_CENTAUR
 ./scripts/config --disable CONFIG_CPU_SUP_ZHAOXIN
 ./scripts/config --set-val CONFIG_NR_CPUS 32 # 16 cores / 32 threads
+./scripts/config --disable CONFIG_GENERIC_CPU
+./scripts/config --disable CONFIG_X86_64_V3 # use -march=znver4 instead
 ./scripts/config --disable CONFIG_X86_64_V4  # AVX-512 (Zen 4<)
-./scripts/config --enable CONFIG_X86_64_V3
 ./scripts/config --disable CONFIG_X86_32
 ./scripts/config --disable CONFIG_MAXSMP
 ./scripts/config --enable CONFIG_X86_MCE_AMD
@@ -122,16 +140,16 @@
 ./scripts/config --module CONFIG_GPIO_AMD_FCH # GPIO (selten direkt gebraucht)
 
 # --- AMD memory encryption (SME / SEV) ---------------------------------------
-./scripts/config --enable CONFIG_AMD_MEM_ENCRYPT
+./scripts/config --enable  CONFIG_AMD_MEM_ENCRYPT
 ./scripts/config --disable CONFIG_AMD_MEM_ENCRYPT_ACTIVE_BY_DEFAULT
 
 # --- CPU frequency scaling: AMD P-State + SCHEDUTIL -------------------------
 ./scripts/config --enable CONFIG_CPU_FREQ
 ./scripts/config --enable CONFIG_X86_AMD_PSTATE
 #../scripts/config --enable CONFIG_X86_AMD_PSTATE_UT     # Optional: Unit Tests
-./scripts/config --enable CONFIG_CPU_FREQ_GOV_SCHEDUTIL
-./scripts/config --enable CONFIG_CPU_FREQ_GOV_PERFORMANCE
-./scripts/config --enable CONFIG_CPU_FREQ_DEFAULT_GOV_SCHEDUTIL
+./scripts/config --enable  CONFIG_CPU_FREQ_GOV_SCHEDUTIL
+./scripts/config --enable  CONFIG_CPU_FREQ_GOV_PERFORMANCE
+./scripts/config --enable  CONFIG_CPU_FREQ_DEFAULT_GOV_SCHEDUTIL
 
 # Disable all other default-governor options (only one can be default)
 ./scripts/config --disable CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE
@@ -187,6 +205,10 @@
 ./scripts/config --enable CONFIG_DRM
 ./scripts/config --enable CONFIG_DRM_SIMPLEDRM # EFI boot frame buffer before NVIDIA inits
 ./scripts/config --enable CONFIG_DRM_FBDEV_EMULATION
+# === NVIDIA-only: Force disable nouveau completely (LLVM LTO fix) ===
+./scripts/config --disable CONFIG_DRM_NOUVEAU
+./scripts/config --disable CONFIG_NOUVEAU_PLATFORM_DRIVER
+./scripts/config --disable CONFIG_DRM_NOUVEAU_BACKLIGHT
 
 # Framebuffer
 ./scripts/config --enable CONFIG_FB
@@ -252,7 +274,7 @@
 ./scripts/config --disable CONFIG_HID_PLAYSTATION # PS5 Controller
 ./scripts/config --disable CONFIG_HID_STEAM       # Steam Controller
 
-# --- Network: Realtek 2.5GbE + Bluetooth – no WiFi --------------------------
+# --- Network: Realtek 2.5GbE – no WiFi --------------------------
 ./scripts/config --enable CONFIG_INET
 ./scripts/config --enable CONFIG_IPV6
 ./scripts/config --enable CONFIG_NET_VENDOR_REALTEK
@@ -274,7 +296,7 @@
 # Bluetooth – benötigt auf diesem System
 ./scripts/config --module CONFIG_BT          # Als Modul (wird nur bei Bedarf geladen)
 ./scripts/config --module CONFIG_BT_RFCOMM   # Serial-Profil (z. B. Tastatur)
-#./scripts/config --module CONFIG_BT_HIDP     # HID-Profil (Maus, Headset)
+./scripts/config --module CONFIG_BT_HIDP     # HID over Bluetooth — needed for BT headsets
 ./scripts/config --module CONFIG_BT_BNEP     # Network profile
 ./scripts/config --module CONFIG_BT_HCIBTUSB # USB Bluetooth adapter
 ./scripts/config --enable CONFIG_BT_LE       # Bluetooth Low Energy
@@ -385,14 +407,16 @@ done
 ./scripts/config --disable CONFIG_BOOT_PRINTK_DELAY
 
 # --- Debug / tracing: all off for production ---------------------------------
+# required by BPF + sched-ext tracing
+./scripts/config --enable CONFIG_DEBUG_FS
+./scripts/config --enable CONFIG_FTRACE
+./scripts/config --enable CONFIG_KPROBES
+
 ./scripts/config --disable CONFIG_DEBUG_KERNEL
 ./scripts/config --disable CONFIG_DEBUG_INFO
 ./scripts/config --disable CONFIG_DEBUG_INFO_DWARF4
 ./scripts/config --disable CONFIG_DEBUG_INFO_DWARF5
 ./scripts/config --disable CONFIG_DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT
-./scripts/config --disable CONFIG_DEBUG_FS
-#./scripts/config --disable CONFIG_FTRACE
-./scripts/config --disable CONFIG_KPROBES
 ./scripts/config --disable CONFIG_KCOV
 ./scripts/config --disable CONFIG_PROVE_LOCKING
 ./scripts/config --disable CONFIG_LOCK_DEBUGGING_SUPPORT

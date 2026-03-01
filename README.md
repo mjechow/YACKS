@@ -29,3 +29,40 @@ At last, it offers the installation of the new build kernel dep packages.
 - who is it for
 - how do i use it
 - <https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/>
+
+
+sudo apt install \
+  clang-19 \
+  lld-19 \
+  llvm-19 \
+  llvm-19-dev \
+  libclang-common-19-dev \
+  libllvm19 \
+  clang-tools-19 \
+  libomp-19-dev \
+  ccache \
+  binutils \
+  make \
+  bc \
+  bison \
+  flex \
+  libelf-dev \
+  libssl-dev \
+  libncurses-dev \
+  python3 \
+  pahole \
+  dwarves \
+  debhelper \
+  rsync \
+  cpio
+
+❯ sudo update-alternatives --install /usr/bin/clang clang /usr/lib/llvm-19/bin/clang 100
+sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/lib/llvm-19/bin/clang++ 100
+sudo update-alternatives --install /usr/bin/ld.lld ld.lld /usr/lib/llvm-19/bin/ld.lld 100
+sudo update-alternatives --install /usr/bin/llvm-ar llvm-ar /usr/lib/llvm-19/bin/llvm-ar 100
+sudo update-alternatives --install /usr/bin/llvm-nm llvm-nm /usr/lib/llvm-19/bin/llvm-nm 100
+sudo update-alternatives --install /usr/bin/llvm-objcopy llvm-objcopy /usr/lib/llvm-19/bin/llvm-objcopy 100
+sudo update-alternatives --install /usr/bin/llvm-objdump llvm-objdump /usr/lib/llvm-19/bin/llvm-objdump 100
+sudo update-alternatives --install /usr/bin/llvm-strip llvm-strip /usr/lib/llvm-19/bin/llvm-strip 100
+sudo update-alternatives --install /usr/bin/llvm-ranlib llvm-ranlib /usr/lib/llvm-19/bin/llvm-ranlib 100
+sudo update-alternatives --install /usr/bin/llvm-readelf llvm-readelf /usr/lib/llvm-19/bin/llvm-readelf 100
