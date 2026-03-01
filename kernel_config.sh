@@ -64,11 +64,6 @@
 ./scripts/config --enable CONFIG_RD_ZSTD
 
 # --- Timer & scheduling ------------------------------------------------------
-#./scripts/config --enable  CONFIG_HZ_PERIODIC
-#./scripts/config --disable CONFIG_NO_HZ_FULL
-./scripts/config --disable CONFIG_HZ_PERIODIC
-./scripts/config --enable CONFIG_NO_HZ_IDLE # Better for desktop
-#./scripts/config --enable CONFIG_NO_HZ_FULL # For CPU isolation if needed
 ./scripts/config --enable CONFIG_TICK_CPU_ACCOUNTING
 ./scripts/config --disable CONFIG_VIRT_CPU_ACCOUNTING_GEN
 ./scripts/config --disable CONFIG_NTP_PPS # desktop doesn't need PPS
@@ -82,6 +77,11 @@
 ./scripts/config --disable CONFIG_PREEMPT_NONE
 
 # --- Timer frequency: 1000 Hz for smooth desktop ----------------------------
+#./scripts/config --enable  CONFIG_HZ_PERIODIC
+#./scripts/config --disable CONFIG_NO_HZ_FULL
+./scripts/config --disable CONFIG_HZ_PERIODIC
+./scripts/config --enable CONFIG_NO_HZ_IDLE # Better for desktop
+#./scripts/config --enable CONFIG_NO_HZ_FULL # For CPU isolation if needed
 ./scripts/config --disable CONFIG_HZ_250
 ./scripts/config --disable CONFIG_HZ_500
 ./scripts/config --enable CONFIG_HZ_1000
@@ -157,10 +157,9 @@
 ./scripts/config --enable CONFIG_CRYPTO_AES_NI_INTEL
 ./scripts/config --enable CONFIG_CRYPTO_AVX2
 ./scripts/config --enable CONFIG_CRYPTO_SHA256_SSSE3
-
-./scripts/config --module CONFIG_CRYPTO_AES
-./scripts/config --module CONFIG_CRYPTO_XTS
-./scripts/config --module CONFIG_CRYPTO_SHA256
+./scripts/config --enable CONFIG_CRYPTO_AES
+./scripts/config --enable CONFIG_CRYPTO_XTS
+./scripts/config --enable CONFIG_CRYPTO_SHA256
 ./scripts/config --module CONFIG_CRYPTO_USER_API_SKCIPHER
 
 # --- ACPI --------------------------------------------------------------------
@@ -244,7 +243,7 @@
 ./scripts/config --enable CONFIG_INPUT_EVDEV
 ./scripts/config --module CONFIG_HID_GENERIC
 ./scripts/config --module CONFIG_USB_HID
-./scripts/config --enable CONFIG_MMC_BLOCK
+./scripts/config --module CONFIG_MMC_BLOCK
 ./scripts/config --module CONFIG_MMC_SDHCI_PCI    # PCI SDHC Host
 
 # No game controllers on this system
@@ -281,12 +280,12 @@
 ./scripts/config --enable CONFIG_BT_LE       # Bluetooth Low Energy
 
 # All other NIC vendors
-for v in INTEL 3COM ADAPTEC ALACRITECH AGERE ALTEON AMAZON AMD AQUANTIA ARC ASIX ATHEROS \
-  BROADCOM CADENCE CAVIUM CHELSIO CISCO CORTINA DEC DLINK EMULEX \
-  EZCHIP GOOGLE HUAWEI MARVELL MELLANOX MICREL MICROCHIP MICROSEMI \
-  MYRICOM NATSEMI NETERION NETRONOME NI NVIDIA OKI PACKET_ENGINES \
-  QLOGIC QUALCOMM RDC ROCKER SAMSUNG SEEQ SILAN SIS SMSC STMICRO \
-  SUN SYNOPSYS TEHUTI TI WANGXUN VIA WIZNET XILINX; do
+for v in INTEL 3COM ADAPTEC ADI ALACRITECH AGERE ALTEON AMAZON AMD AQUANTIA ARC ASIX ATHEROS \
+  BROADCOM BROCADE CADENCE CAVIUM CHELSIO CISCO CORTINA DAVICOM DEC DLINK EMULEX ENGLEDER \
+  EZCHIP FUNGIBLE GOOGLE HUAWEI LITEX MARVELL MELLANOX META MICREL MICROCHIP MICROSEMI MICROSOFT \
+  MYRI MYRICOM NATSEMI NETERION NETRONOME NI NVIDIA OKI PACKET_ENGINES PENSANDO \
+  QLOGIC QUALCOMM RENESAS RDC ROCKER SAMSUNG SEEQ SILAN SIS SMSC SOLARFLARE SOCIONEXT STMICRO \
+  SUN SYNOPSYS TEHUTI TI WANGXUN VERTEXCOM VIA WIZNET XILINX; do
   ./scripts/config --disable "CONFIG_NET_VENDOR_${v}"
 done
 
