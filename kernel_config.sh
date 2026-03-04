@@ -64,9 +64,11 @@ echo "Kernel config here!"
 # --- Swap compression (zswap) ------------------------------------------------
 ./scripts/config --enable  CONFIG_ZSWAP
 ./scripts/config --enable  CONFIG_ZSWAP_DEFAULT_ON
-./scripts/config --set-str CONFIG_ZSWAP_SHRINKER_DEFAULT "yes"
+./scripts/config --enable  CONFIG_ZSWAP_SHRINKER_DEFAULT_ON
 ./scripts/config --enable  CONFIG_CRYPTO_ZSTD
-./scripts/config --set-str CONFIG_ZSWAP_COMPRESSOR_DEFAULT "zstd"
+./scripts/config --enable  CONFIG_ZSWAP_COMPRESSOR_DEFAULT_ZSTD
+./scripts/config --set-str CONFIG_ZSWAP_COMPRESSOR_DEFAULT "zstd"  # redundant aber dokumentiert Intent
+./scripts/config --disable CONFIG_ZSWAP_COMPRESSOR_DEFAULT_LZO
 
 # --- Initramfs (required by Mint) --------------------------------------------
 ./scripts/config --enable CONFIG_BLK_DEV_INITRD
