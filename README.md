@@ -34,7 +34,7 @@ sudo apt install -y build-essential gcc make binutils \
   gcc-13 g++-13 libc6-dev libncurses-dev bison flex \
   libssl-dev libelf-dev bc pahole cpio
 
-### new release should do 
+### new release should do
+
 Combined with scripts/kconfig/merge_config.sh, to handle dependency resolution properly. One fragment per concern — fragment-amd.config,
 fragment-nvidia.config, fragment-security.config — composable and readable
-
