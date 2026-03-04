@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# ==============================================================================
+# buildKernel.sh – YACKS (yet another compile kernel script)
+# ==============================================================================
+
 set -euo pipefail
 
 DEBUG=0
@@ -19,8 +23,8 @@ export CCACHE_MAXSIZE="10G"
 export CC="ccache gcc"
 export CXX="ccache g++"
 export LD=ld.bfd
-
-export N_PROC=$(($( nproc) * 1))     # Use max 1.5x CPU cores for faster builds on I/O bound systems
+# shfmt-ignore
+export N_PROC=$(($(nproc) + 4)) # default: +4; you should configure a maximum of 1.5x CPU cores for faster builds on I/O bound systems
 
 # --- Helpers -----------------------------------------------------------------
 info() { printf "[*] %s\n" "$@"; }
@@ -52,12 +56,12 @@ info "Using GCC ${GCC_MAJOR}"
 
 # --- Clean & reset git -------------------------------------------------------
 info "Cleanup and checkout..."
-make distclean || die "make distclean failed – is this a valid kernel source tree?"
-git reset --hard
-git clean -dfx
+make CC=gcc distclean || die "make distclean failed – is this a valid kernel source tree?"
+git reset --hard && git clean -dfx  # NOTE: change if patches once introduced
 
 # --- Determine kernel version from git tag -----------------------------------
-KERNEL_VERSION_DIR=$(git tag --merged HEAD --sort=taggerdate | tail -n1)
+KERNEL_VERSION_DIR=$(git tag --merged HEAD --sort=version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | tail -n1)
+debug "Latest merged version tag: $KERNEL_VERSION_DIR"
 KERNEL_VERSION="${KERNEL_VERSION_DIR#v}" # strip leading 'v'; only adds hyphen if REV is set
 
 # --- Download Ubuntu mainline .deb to extract its .config --------------------
@@ -71,6 +75,10 @@ DEB_FILENAME="linux-modules-${KERNEL_VERSION}-${KERNEL_VERSION_LONG}-generic_${K
 DEB_FILE=$(curl -sL "$UBUNTU_BASE_URL" |
   grep -Eo "${DEB_FILENAME}.[0-9]{12}_amd64.deb" |
   head -1) || warn "Could not find .deb for kernel ${KERNEL_VERSION} at ${UBUNTU_BASE_URL}"
+[[ -z "$DEB_FILE" ]] && {
+  warn "Could not find .deb ..."
+  DEB_FILE=""
+}
 
 DEB_URL="${UBUNTU_BASE_URL}/amd64/${DEB_FILE}"
 debug "Ubuntu .deb URL: $DEB_URL"
@@ -103,19 +111,21 @@ fetch_ubuntu_config() {
 
 # --- Generate base config ----------------------------------------------------
 info "Generating base kernel config..."
-make clean
 fetch_ubuntu_config
 
-info "Validating and updating configuration..."
-make CC=gcc olddefconfig || die "Configuration processing failed!\n"
-cp .config "$SCRIPT_DIR/config-$KERNEL_VERSION-$LOCALVERSION"
-success "Done."
-echo
-
 info "Applying custom kernel options..."
+make CC=gcc olddefconfig || die "Configuration processing failed!\n"
 # shellcheck source=kernel_config.sh
 source "$KERNEL_CONFIG"
 success "Custom options applied."
+echo
+
+info "Validating and updating configuration..."
+cp .config "$SCRIPT_DIR/config-$KERNEL_VERSION-$LOCALVERSION"
+make CC=gcc olddefconfig || die "Configuration processing failed!\n"
+./scripts/diffconfig "$SCRIPT_DIR/config-$KERNEL_VERSION-$LOCALVERSION" .config \
+  > "$SCRIPT_DIR/config-$KERNEL_VERSION-$LOCALVERSION".diff || die "Diffing configs failed!\n"
+success "Done."
 echo
 
 # --- Summary & confirmation --------------------------------------------------
