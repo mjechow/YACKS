@@ -9,10 +9,10 @@
 #   Mainboard: MSI MPG X670E Carbon WiFi
 #   CPU:       AMD Ryzen 9 7950X3D (Zen 4, 16c/32t)
 #   RAM:       Kingston FURY Beast 64 GB DDR5-6000 CL30-36-36 (KF560C30BBEK2-64) (KF560C30-32 x2)
-#   SSD:       Samsung 970 EVO Plus 1 TB (NVMe PCIe 3.0 x4)
-#   HDD:       Western Digital WD Caviar Green 1TB
-#   SSD2:      Lexar NM620 1TB
-#   SSD3:      Samsung SSD 850 EVO 500GB
+#   SSD:       Samsung 970 EVO Plus 1 TB (NVMe PCIe 3.0 x4) btrfs/ext4
+#   HDD:       Western Digital WD Caviar Green 1TB ntfs
+#   SSD2:      Lexar NM620 1TB ntfs
+#   SSD3:      Samsung SSD 850 EVO 500GB ntfs
 #   GPU:       NVIDIA GeForce RTX 3070 (AMD GPU disabled in BIOS)
 #   Sound:     Onboard (Realtek via HDA Intel) – no HDMI audio
 #   Network:   Realtek RTL8125 2.5GbE onboard – WiFi unused, Bluetooth used
@@ -21,12 +21,12 @@
 #   Keyboard:       Logitech MX Keys (USB receiver)
 #   Mouse:          Asus ROG Keris Wireless Aimpoint (USB receiver)
 #   Monitor:        Dell U2715H
-#   DVD-Writer:     TSSTcorp SH-S203D
+#   DVD-Writer:     TSSTcorp SH-S203D CDRFS/UDF
 #   Printer:        Color Laser Jet Pro MFP M477fdn
-#   SDCard Reader:  Lexar USB 3.0 LRW400U Rev A (connected via USB)
-#   SD Card Reader: Graugear G-MP01CR
+#   SDCard Reader:  Lexar USB 3.0 LRW400U Rev A (connected via USB) exfat
+#   SD Card Reader: Graugear G-MP01CR fat/fat32
 #   HeadSet:        BeyerDynamic MMX 200
-#   Smartphone:     Samsung S20FE
+#   Smartphone:     Samsung S20FE  YAFFS/f2fs/vfat/sdcardfs
 # ==============================================================================
 
 echo "Kernel config here!"
@@ -62,10 +62,13 @@ echo "Kernel config here!"
 ./scripts/config --enable CONFIG_FW_LOADER_USER_HELPER
 
 # --- Swap compression (zswap) ------------------------------------------------
-./scripts/config --enable CONFIG_ZSWAP
-./scripts/config --enable CONFIG_ZSWAP_DEFAULT_ON
-./scripts/config --set-str CONFIG_ZSWAP_COMPRESSOR_DEFAULT "zstd"
-./scripts/config --set-str CONFIG_ZSWAP_SHRINKER_DEFAULT "yes"
+./scripts/config --enable  CONFIG_ZSWAP
+./scripts/config --enable  CONFIG_ZSWAP_DEFAULT_ON
+./scripts/config --enable  CONFIG_ZSWAP_SHRINKER_DEFAULT_ON
+./scripts/config --enable  CONFIG_CRYPTO_ZSTD
+./scripts/config --enable  CONFIG_ZSWAP_COMPRESSOR_DEFAULT_ZSTD
+./scripts/config --set-str CONFIG_ZSWAP_COMPRESSOR_DEFAULT "zstd"  # redundant aber dokumentiert Intent
+./scripts/config --disable CONFIG_ZSWAP_COMPRESSOR_DEFAULT_LZO
 
 # --- Initramfs (required by Mint) --------------------------------------------
 ./scripts/config --enable CONFIG_BLK_DEV_INITRD
@@ -73,42 +76,36 @@ echo "Kernel config here!"
 ./scripts/config --enable CONFIG_RD_ZSTD
 
 # --- Timer & scheduling ------------------------------------------------------
-./scripts/config --enable  CONFIG_TICK_CPU_ACCOUNTING
-./scripts/config --disable CONFIG_VIRT_CPU_ACCOUNTING_GEN
+#./scripts/config --enable  CONFIG_TICK_CPU_ACCOUNTING
+#./scripts/config --disable CONFIG_VIRT_CPU_ACCOUNTING_GEN
 ./scripts/config --disable CONFIG_NTP_PPS # desktop doesn't need PPS
 ./scripts/config --set-val CONFIG_RCU_BOOST_DELAY 500
-./scripts/config --disable CONFIG_SCHED_CLASS_EXT
+./scripts/config --enable  CONFIG_SCHED_CLASS_EXT
 ./scripts/config --disable CONFIG_SCHED_CORE
-./scripts/config --disable CONFIG_BPF
-./scripts/config --disable CONFIG_BPF_SYSCALL
-./scripts/config --disable CONFIG_BPF_JIT
-./scripts/config --disable CONFIG_BPF_JIT_DEFAULT_ON
 
 # Per-VMA locking — reduces mmap_lock contention (upstream since 6.3)
 ./scripts/config --enable CONFIG_PER_VMA_LOCK
 # mglru (Multi-Gen LRU) — better page reclaim, upstream since 6.1
 ./scripts/config --enable CONFIG_LRU_GEN
 ./scripts/config --enable CONFIG_LRU_GEN_ENABLED
-#./scripts/config --enable CONFIG_LRU_GEN_STATS   # optional, adds overhead
 
 # --- Preemption (dynamic = best of both worlds on desktop) ------------------
+./scripts/config --enable CONFIG_PREEMPT
 ./scripts/config --enable CONFIG_PREEMPT_DYNAMIC
 ./scripts/config --disable CONFIG_PREEMPT_VOLUNTARY
 ./scripts/config --disable CONFIG_PREEMPT_NONE
 
 # --- Timer frequency: 1000 Hz for smooth desktop ----------------------------
-#./scripts/config --enable  CONFIG_HZ_PERIODIC
-#./scripts/config --disable CONFIG_NO_HZ_FULL
 ./scripts/config --disable CONFIG_HZ_PERIODIC
-./scripts/config --enable CONFIG_NO_HZ_IDLE # Better for desktop
-#./scripts/config --enable CONFIG_NO_HZ_FULL # For CPU isolation if needed
+./scripts/config --disable CONFIG_NO_HZ_FULL # For CPU isolation if needed
+./scripts/config --enable  CONFIG_NO_HZ_COMMON
+./scripts/config --enable  CONFIG_NO_HZ_IDLE # Better for desktop
 ./scripts/config --disable CONFIG_HZ_250
 ./scripts/config --disable CONFIG_HZ_500
-./scripts/config --enable CONFIG_HZ_1000
+./scripts/config --enable  CONFIG_HZ_1000
 ./scripts/config --set-val CONFIG_HZ 1000
 
 # --- CPU: AMD Zen 4 / Ryzen 9 7950X3D ---------------------------------------
-./scripts/config --enable  CONFIG_AMD_X3D_OPTIMIZER
 ./scripts/config --enable  CONFIG_SCHED_MC_PRIO
 ./scripts/config --enable  CONFIG_SCHED_MC
 ./scripts/config --enable  CONFIG_SCHED_SMT
@@ -125,7 +122,6 @@ echo "Kernel config here!"
 ./scripts/config --enable  CONFIG_X86_MCE_AMD
 ./scripts/config --disable CONFIG_X86_ANCIENT_MCE
 ./scripts/config --enable  CONFIG_X86_X2APIC
-./scripts/config --enable  CONFIG_HAVE_PERF_EVENTS_NMI
 ./scripts/config --enable  CONFIG_ACPI_PROCESSOR_IDLE
 ./scripts/config --enable  CONFIG_CPU_IDLE_GOV_LADDER
 ./scripts/config --enable  CONFIG_CPU_IDLE_GOV_MENU
@@ -148,7 +144,6 @@ echo "Kernel config here!"
 # --- CPU frequency scaling: AMD P-State + SCHEDUTIL -------------------------
 ./scripts/config --enable CONFIG_CPU_FREQ
 ./scripts/config --enable CONFIG_X86_AMD_PSTATE
-#../scripts/config --enable CONFIG_X86_AMD_PSTATE_UT     # Optional: Unit Tests
 ./scripts/config --enable CONFIG_CPU_FREQ_GOV_SCHEDUTIL
 ./scripts/config --enable CONFIG_CPU_FREQ_GOV_PERFORMANCE
 ./scripts/config --enable CONFIG_CPU_FREQ_DEFAULT_GOV_SCHEDUTIL
@@ -175,7 +170,6 @@ echo "Kernel config here!"
 
 # --- Crypto (AES-NI + AVX2 are present on Zen 4) ----------------------------
 ./scripts/config --enable CONFIG_CRYPTO_AES_NI_INTEL
-./scripts/config --enable CONFIG_CRYPTO_AVX2
 ./scripts/config --enable CONFIG_CRYPTO_SHA256_SSSE3
 ./scripts/config --enable CONFIG_CRYPTO_AES
 ./scripts/config --enable CONFIG_CRYPTO_XTS
@@ -305,7 +299,7 @@ echo "Kernel config here!"
 
 # All other NIC vendors
 for v in INTEL 3COM ADAPTEC ADI ALACRITECH AGERE ALTEON AMAZON AMD AQUANTIA ARC ASIX ATHEROS \
-  BROADCOM BROCADE CADENCE CAVIUM CHELSIO CISCO CORTINA DAVICOM DEC DLINK EMULEX ENGLEDER \
+  BROCADE CADENCE CAVIUM CISCO CORTINA DAVICOM DEC DLINK EMULEX ENGLEDER \
   EZCHIP FUNGIBLE GOOGLE HUAWEI LITEX MARVELL MELLANOX META MICREL MICROCHIP MICROSEMI MICROSOFT \
   MYRI MYRICOM NATSEMI NETERION NETRONOME NI NVIDIA OKI PACKET_ENGINES PENSANDO \
   QLOGIC QUALCOMM RENESAS RDC ROCKER SAMSUNG SEEQ SILAN SIS SMSC SOLARFLARE SOCIONEXT STMICRO \
@@ -317,8 +311,10 @@ done
 ./scripts/config --enable CONFIG_NET_SCH_FQ
 ./scripts/config --enable CONFIG_NET_SCH_FQ_CODEL
 ./scripts/config --enable CONFIG_NET_SCH_CAKE
+./scripts/config --enable CONFIG_DEFAULT_BBR
 ./scripts/config --enable CONFIG_TCP_CONG_BBR
 ./scripts/config --set-str CONFIG_DEFAULT_TCP_CONG "bbr"
+./scripts/config --disable CONFIG_DEFAULT_CUBIC
 
 # --- Storage: NVMe -----------------------------------------------------------
 ./scripts/config --enable CONFIG_NVME_PCI
@@ -345,6 +341,7 @@ done
 # --- Filesystems -------------------------------------------------------------
 ./scripts/config --enable CONFIG_EXT4_FS
 ./scripts/config --enable CONFIG_BTRFS_FS
+./scripts/config --module CONFIG_CIFS
 ./scripts/config --enable CONFIG_VFAT_FS    # ESP
 ./scripts/config --enable CONFIG_NTFS3_FS   # modern NTFS driver
 ./scripts/config --enable CONFIG_FUSE_FS    # AppImage etc.
@@ -355,11 +352,11 @@ done
 ./scripts/config --module CONFIG_EXFAT_FS
 ./scripts/config --enable CONFIG_ISO9660_FS
 ./scripts/config --enable CONFIG_UDF_FS
+./scripts/config --module CONFIG_F2FS_FS
 
 # Exotic – not needed
 ./scripts/config --disable CONFIG_REISERFS_FS
 ./scripts/config --disable CONFIG_JFS_FS
-# ./scripts/config --disable CONFIG_F2FS_FS
 ./scripts/config --disable CONFIG_NILFS2_FS
 ./scripts/config --disable CONFIG_EROFS_FS
 ./scripts/config --disable CONFIG_XFS_FS
@@ -409,13 +406,15 @@ done
 ./scripts/config --disable CONFIG_BOOT_PRINTK_DELAY
 
 # --- Debug / tracing: all off for production ---------------------------------
-# required by BPF + sched-ext tracing
-./scripts/config --disable CONFIG_DEBUG_FS
+./scripts/config --enable  CONFIG_DEBUG_INFO_NONE
+./scripts/config --disable CONFIG_MODVERSIONS
+./scripts/config --disable CONFIG_ASM_MODVERSIONS
+./scripts/config --disable CONFIG_EXTENDED_MODVERSIONS
+./scripts/config --disable CONFIG_BASIC_MODVERSIONS
+./scripts/config --disable CONFIG_GENKSYMS
 ./scripts/config --disable CONFIG_FTRACE
 ./scripts/config --disable CONFIG_KPROBES
 ./scripts/config --disable CONFIG_DEBUG_INFO_BTF
-
-./scripts/config --disable CONFIG_DEBUG_KERNEL
 ./scripts/config --disable CONFIG_DEBUG_INFO
 ./scripts/config --disable CONFIG_DEBUG_INFO_DWARF4
 ./scripts/config --disable CONFIG_DEBUG_INFO_DWARF5
@@ -425,7 +424,6 @@ done
 ./scripts/config --disable CONFIG_DEBUG_OBJECTS
 ./scripts/config --disable CONFIG_KCOV
 ./scripts/config --disable CONFIG_PROVE_LOCKING
-./scripts/config --disable CONFIG_LOCK_DEBUGGING_SUPPORT
 ./scripts/config --disable CONFIG_LOCK_STAT
 ./scripts/config --disable CONFIG_KGDB
 ./scripts/config --disable CONFIG_UBSAN
