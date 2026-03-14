@@ -20,9 +20,8 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v6
-
       - name: MegaLinter
-        uses: oxsecurity/megalinter/flavors/documentation@v9
+        uses: mjechow/megalinter-custom-flavor@main
         env:
           ENABLE_LINTERS: BASH_SHELLCHECK,BASH_SHFMT,MARKDOWN_MARKDOWNLINT,YAML_YAMLLINT,JSON_ESLINT_PLUGIN_JSONC,ACTION_ACTIONLINT
           BASH_SHFMT_ARGUMENTS: "-i 2 -ci -sr -kp"

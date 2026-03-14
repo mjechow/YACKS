@@ -147,7 +147,7 @@ if ! time nice make -j"$N_PROC" \
     LOCALVERSION="-$LOCALVERSION" \
     INSTALL_MOD_STRIP=1 \
     KCFLAGS="-march=znver4 -mtune=znver4 -pipe" \
-  V=$VERBOSITY \
+  	V=$VERBOSITY \
     bindeb-pkg 2>&1 | tee ../$BUILD_LOG_FILE; then
     die "Build failed. Check $SCRIPT_DIR/$BUILD_LOG_FILE for details."
 fi
