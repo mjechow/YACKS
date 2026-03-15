@@ -143,13 +143,13 @@ read -rp "Compile this kernel? [y/N] " confirm
 
 info "Starting build ($N_PROC threads)..."
 if ! time nice make -j"$N_PROC" \
-    ARCH=x86_64 \
-    LOCALVERSION="-$LOCALVERSION" \
-    INSTALL_MOD_STRIP=1 \
-    KCFLAGS="-march=znver4 -mtune=znver4 -pipe" \
-  	V=$VERBOSITY \
-    bindeb-pkg 2>&1 | tee ../$BUILD_LOG_FILE; then
-    die "Build failed. Check $SCRIPT_DIR/$BUILD_LOG_FILE for details."
+  ARCH=x86_64 \
+  LOCALVERSION="-$LOCALVERSION" \
+  INSTALL_MOD_STRIP=1 \
+  KCFLAGS="-march=znver4 -mtune=znver4 -pipe" \
+  V=$VERBOSITY \
+  bindeb-pkg 2>&1 | tee ../$BUILD_LOG_FILE; then
+  die "Build failed. Check $SCRIPT_DIR/$BUILD_LOG_FILE for details."
 fi
 
 # time nice make -j"$N_PROC" tools/cpupower ARCH=x86_64 | tee ../tools.log

@@ -34,7 +34,7 @@ sudo apt install -y build-essential gcc make binutils \
   gcc-13 g++-13 libc6-dev libncurses-dev bison flex \
   libssl-dev libelf-dev bc pahole cpio
 
-wget https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/plain/rtl_nic/rtl8125k-1.fw
+wget <https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/plain/rtl_nic/rtl8125k-1.fw>
 sudo cp rtl8125k-1.fw /lib/firmware/rtl_nic/
 sudo cp rtl9151a-1.fw /lib/firmware/rtl_nic/
 
