@@ -439,5 +439,5 @@ done
 # --- Module signing: clear keys (custom build, not distro-signed) -----------
 ./scripts/config --set-str CONFIG_SYSTEM_REVOCATION_KEYS ""
 ./scripts/config --set-str CONFIG_SYSTEM_TRUSTED_KEYS ""
-#../scripts/config --disable MODULE_SIG
-#../scripts/config --disable CONFIG_MODULE_SIG_ALL
+#./scripts/config --disable MODULE_SIG
+./scripts/config --disable CONFIG_MODULE_SIG_ALL
