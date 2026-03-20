@@ -18,13 +18,13 @@ LOCALVERSION="$(whoami)-$(hostname -s)${REV:+-$REV}"
 
 ARCH="$(uname -m)"
 export ARCH
-export CCACHE_DIR="./ccache_kernel"  # separater Cache vom normalen ccache
+export CCACHE_DIR="${SCRIPT_DIR}/ccache_kernel" # separater Cache vom normalen ccache
 export CCACHE_MAXSIZE="10G"
 export CC="ccache gcc"
 export CXX="ccache g++"
 export LD=ld.bfd
 # shfmt-ignore
-export N_PROC=$(($(nproc) + 4)) # default: +4; you should configure a maximum of 1.5x CPU cores for faster builds on I/O bound systems
+export N_PROC=$(($(nproc) + 2)) # default: +2; you should configure a maximum of 1.5x CPU cores for faster builds on I/O bound systems
 
 # --- Helpers -----------------------------------------------------------------
 info() { printf "[*] %s\n" "$@"; }

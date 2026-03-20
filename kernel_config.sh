@@ -80,7 +80,7 @@ echo "Kernel config here!"
 #./scripts/config --disable CONFIG_VIRT_CPU_ACCOUNTING_GEN
 ./scripts/config --disable CONFIG_NTP_PPS # desktop doesn't need PPS
 ./scripts/config --set-val CONFIG_RCU_BOOST_DELAY 500
-./scripts/config --enable  CONFIG_SCHED_CLASS_EXT
+./scripts/config --disable  CONFIG_SCHED_CLASS_EXT
 ./scripts/config --disable CONFIG_SCHED_CORE
 
 # Per-VMA locking — reduces mmap_lock contention (upstream since 6.3)
@@ -301,7 +301,7 @@ echo "Kernel config here!"
 for v in INTEL 3COM ADAPTEC ADI ALACRITECH AGERE ALTEON AMAZON AMD AQUANTIA ARC ASIX ATHEROS \
   BROCADE CADENCE CAVIUM CISCO CORTINA DAVICOM DEC DLINK EMULEX ENGLEDER \
   EZCHIP FUNGIBLE GOOGLE HUAWEI LITEX MARVELL MELLANOX META MICREL MICROCHIP MICROSEMI MICROSOFT \
-  MYRI MYRICOM NATSEMI NETERION NETRONOME NI NVIDIA OKI PACKET_ENGINES PENSANDO \
+  MYRICOM NATSEMI NETERION NETRONOME NI NVIDIA OKI PACKET_ENGINES PENSANDO \
   QLOGIC QUALCOMM RENESAS RDC ROCKER SAMSUNG SEEQ SILAN SIS SMSC SOLARFLARE SOCIONEXT STMICRO \
   SUN SYNOPSYS TEHUTI TI WANGXUN VERTEXCOM VIA WIZNET XILINX; do
   ./scripts/config --disable "CONFIG_NET_VENDOR_${v}"
@@ -317,7 +317,6 @@ done
 ./scripts/config --disable CONFIG_DEFAULT_CUBIC
 
 # --- Storage: NVMe -----------------------------------------------------------
-./scripts/config --enable CONFIG_NVME_PCI
 ./scripts/config --enable CONFIG_NVME_CORE
 ./scripts/config --enable CONFIG_BLK_DEV_NVME
 ./scripts/config --enable CONFIG_NVME_MULTIPATH
