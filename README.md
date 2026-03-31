@@ -1,45 +1,134 @@
 # YACKS
 
-YACKS is yet another compile kernel script. It is specifically developed for
-building a linux kernel and tested on Linux Mint.
+**Yet Another Compile Kernel Script** — a custom Linux kernel build system for
+Ubuntu / Linux Mint desktops.
 
-It uses the Ubuntu mainline kernel config from <https://kernel.ubuntu.com/~kernel-ppa/mainline/>
-found in the Linux modules generic dep package for configuration of the kernel.
+YACKS downloads the Ubuntu mainline kernel config from
+<https://kernel.ubuntu.com/~kernel-ppa/mainline/>, applies hardware-specific
+optimizations, disables all debug/tracing overhead, and compiles the kernel into
+installable `.deb` packages.
 
-It modifies the kernel config for optimizations and disables all debugging before compiling the sources.
-Afterward it compiles the kernel.
+## What It Does
 
-At last, it offers the installation of the new build kernel dep packages.
+1. Fetches the matching Ubuntu mainline `.deb` and extracts its `.config`
+   (falls back to the running kernel config if the download fails)
+2. Applies ~200 config tweaks via `kernel_config.sh` for a specific hardware
+   profile (see [Target Hardware](#target-hardware))
+3. Builds the kernel with `make bindeb-pkg`, producing `linux-image`,
+   `linux-headers`, and `linux-libc-dev` packages
+
+## Who Is It For
+
+Anyone running Linux Mint or Ubuntu on AMD Zen 4 hardware who wants a
+stripped-down, performance-tuned kernel without distro debug overhead. The
+config is opinionated — it disables WiFi, Intel/AMD GPU drivers, game
+controllers, and dozens of unused subsystems to reduce build time and kernel
+size.
+
+## Target Hardware
+
+| Component   | Model                                                  |
+| ----------- | ------------------------------------------------------ |
+| Mainboard   | MSI MPG X670E Carbon WiFi                              |
+| CPU         | AMD Ryzen 9 7950X3D (Zen 4, 16c/32t)                  |
+| RAM         | Kingston FURY Beast 64 GB DDR5-6000 CL30               |
+| SSD         | Samsung 970 EVO Plus 1 TB (NVMe PCIe 3.0)             |
+| GPU         | NVIDIA GeForce RTX 3070 (AMD GPU disabled in BIOS)     |
+| Network     | Realtek RTL8125 2.5GbE (r8169 driver), no WiFi         |
+| Sound       | Onboard Realtek via HDA Intel (no HDMI audio)          |
+| OS          | Linux Mint 22.3                                        |
 
 ## Requirements
 
-- installed git
-- installed classic gcc tool chain
-- cloned git sources in a sub directory called "linux"
+- GCC 13+ (required for `-march=znver4`)
+- git
+- ccache
+- dpkg-deb (included in dpkg on Debian/Ubuntu)
+- Kernel sources cloned into a `linux/` subdirectory
 
-## Constraints
+## Quick Start
 
-- It only compiles amd64 architecture source code.
-- Atm the Linux source code has to be checked out and available in the
-  directory "linux" next to the script
+```bash
+# Clone the kernel sources next to the scripts
+git clone https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git
 
-## Todo
+# Check out the desired version
+cd linux
+git checkout v6.12.3
+cd ..
 
-- what is it
-- who is it for
-- how do i use it
-- <https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/>
+# Build
+./buildKernel.sh
 
-sudo apt install -y build-essential gcc make binutils \
-  gcc-13 g++-13 libc6-dev libncurses-dev bison flex \
-  libssl-dev libelf-dev bc pahole cpio
+# Install the generated packages
+sudo dpkg -i linux-image-*.deb linux-headers-*.deb linux-libc-dev_*.deb
+```
 
-wget <https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/plain/rtl_nic/rtl8125k-1.fw>
-sudo cp rtl8125k-1.fw /lib/firmware/rtl_nic/
-sudo cp rtl9151a-1.fw /lib/firmware/rtl_nic/
+## Configuration
 
-### new release should do
+Edit variables at the top of `buildKernel.sh` before running:
 
-Combined with scripts/kconfig/merge_config.sh, to handle dependency resolution properly. One fragment per concern — fragment-amd.config,
-fragment-nvidia.config, fragment-security.config — composable and readable
+| Variable    | Default         | Description                                              |
+| ----------- | --------------- | -------------------------------------------------------- |
+| `DEBUG`     | `0`             | Set to `1` for debug output (also enables VERBOSITY)     |
+| `VERBOSITY` | `0`             | Set to `1` for verbose `make` output                     |
+| `REV`       | _(empty)_       | Optional revision suffix (e.g. `REV=2` → `user-host-2`) |
+| `N_PROC`    | `$(nproc) + 2`  | Parallel make jobs (max 1.5x cores for I/O-bound builds) |
+
+The build uses a **separate ccache directory** (`ccache_kernel/`, 10 GB max) to
+avoid interfering with your regular ccache.
+
+## Key Optimizations
+
+- **CPU tuning:** `-march=znver4 -mtune=znver4` via KCFLAGS
+- **Preemption:** Full preempt with `PREEMPT_DYNAMIC` + 1000 Hz timer
+- **Scheduler:** `SCHED_AUTOGROUP` (prevents `make -j32` from starving the desktop)
+- **Memory:** THP with MADVISE, Multi-Gen LRU, PER_VMA_LOCK, NUMA balancing
+- **Swap:** zswap with zstd compressor (default on)
+- **Network:** BBR congestion control, FQ/FQ_CODEL/CAKE qdisc
+- **I/O:** mq-deadline default (NVMe), BFQ available for rotational devices
+- **Modules:** zstd compression
+- **Security:** AppArmor (Mint default), no SELinux
+- **Debug:** All tracing, kprobes, BTF, DWARF, KASAN, etc. disabled
+
+## Disabled Subsystems
+
+To reduce build time and kernel footprint, the following are disabled:
+WiFi stack, Intel/AMD/virtual GPU drivers, nouveau, game controllers,
+hamradio, CAN, NFC, WiMAX, PCMCIA, FireWire, InfiniBand, ISDN, parallel port,
+floppy, ~60 unused NIC vendors, exotic filesystems (XFS, ReiserFS, JFS, NILFS2,
+EROFS), and IPX/AppleTalk/X.25/DECnet protocols.
+
+## Project Structure
+
+```
+buildKernel.sh       Main build orchestrator
+kernel_config.sh     All kernel config customizations (sourced by buildKernel.sh)
+linux/               Kernel source tree (cloned separately, not tracked)
+ccache_kernel/       Dedicated ccache directory (generated)
+```
+
+## Linting
+
+CI runs [MegaLinter](https://megalinter.io) on push to `main` and on PRs:
+
+```bash
+# Check shell formatting
+shfmt -i 2 -ci -sr -kp -d buildKernel.sh kernel_config.sh
+
+# Fix shell formatting
+shfmt -i 2 -ci -sr -kp -w buildKernel.sh kernel_config.sh
+
+# Lint shell scripts
+shellcheck buildKernel.sh kernel_config.sh
+```
+
+**shfmt style:** 2-space indent (`-i 2`), case indent (`-ci`), space after
+redirect (`-sr`), keep column alignment (`-kp`).
+
+## Roadmap
+
+- Replace the monolithic `kernel_config.sh` with composable config fragments
+  (e.g. `fragment-amd.config`, `fragment-nvidia.config`) using
+  `scripts/kconfig/merge_config.sh` for proper dependency resolution
 
