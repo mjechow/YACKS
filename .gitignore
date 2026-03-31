@@ -6,5 +6,6 @@ linux-libc*
 linux-modules*
 linux-upstream*
 
+ccache_kernel/
 linux/
 old/

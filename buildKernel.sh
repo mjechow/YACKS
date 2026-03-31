@@ -8,7 +8,7 @@ set -euo pipefail
 
 DEBUG=0
 VERBOSITY=0
-REV= # optional build revision suffix; if set, appended to LOCALVERSION as -$REV (e.g. REV=2 → username-hostname-2)
+REV=3 # optional build revision suffix; if set, appended to LOCALVERSION as -$REV (e.g. REV=2 → username-hostname-2)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 KERNEL_CONFIG="${SCRIPT_DIR}/kernel_config.sh"
@@ -20,7 +20,6 @@ ARCH="$(uname -m)"
 export ARCH
 export CCACHE_DIR="${SCRIPT_DIR}/ccache_kernel" # separater Cache vom normalen ccache
 export CCACHE_MAXSIZE="10G"
-export CC="ccache gcc"
 export CXX="ccache g++"
 export LD=ld.bfd
 # shfmt-ignore
@@ -143,6 +142,7 @@ read -rp "Compile this kernel? [y/N] " confirm
 
 info "Starting build ($N_PROC threads)..."
 if ! time nice make -j"$N_PROC" \
+  CC="ccache gcc" \
   ARCH=x86_64 \
   LOCALVERSION="-$LOCALVERSION" \
   INSTALL_MOD_STRIP=1 \

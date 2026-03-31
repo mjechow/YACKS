@@ -76,12 +76,13 @@ echo "Kernel config here!"
 ./scripts/config --enable CONFIG_RD_ZSTD
 
 # --- Timer & scheduling ------------------------------------------------------
-#./scripts/config --enable  CONFIG_TICK_CPU_ACCOUNTING
-#./scripts/config --disable CONFIG_VIRT_CPU_ACCOUNTING_GEN
+./scripts/config --enable  CONFIG_TICK_CPU_ACCOUNTING
+./scripts/config --disable CONFIG_VIRT_CPU_ACCOUNTING_GEN
 ./scripts/config --disable CONFIG_NTP_PPS # desktop doesn't need PPS
 ./scripts/config --set-val CONFIG_RCU_BOOST_DELAY 500
 ./scripts/config --disable  CONFIG_SCHED_CLASS_EXT
 ./scripts/config --disable CONFIG_SCHED_CORE
+./scripts/config --enable  CONFIG_SCHED_AUTOGROUP # groups processes by TTY session; prevents make -j32 from starving the desktop
 
 # Per-VMA locking — reduces mmap_lock contention (upstream since 6.3)
 ./scripts/config --enable CONFIG_PER_VMA_LOCK
@@ -116,7 +117,7 @@ echo "Kernel config here!"
 ./scripts/config --set-val CONFIG_NR_CPUS 32 # 16 cores / 32 threads
 ./scripts/config --disable CONFIG_GENERIC_CPU
 ./scripts/config --disable CONFIG_X86_64_V3 # use -march=znver4 instead
-./scripts/config --disable CONFIG_X86_64_V4  # AVX-512 (Zen 4<)
+./scripts/config --disable CONFIG_X86_64_V4  # using -march=znver4 via KCFLAGS instead
 ./scripts/config --disable CONFIG_X86_32
 ./scripts/config --disable CONFIG_MAXSMP
 ./scripts/config --enable  CONFIG_X86_MCE_AMD
@@ -147,6 +148,7 @@ echo "Kernel config here!"
 ./scripts/config --enable CONFIG_CPU_FREQ_GOV_SCHEDUTIL
 ./scripts/config --enable CONFIG_CPU_FREQ_GOV_PERFORMANCE
 ./scripts/config --enable CONFIG_CPU_FREQ_DEFAULT_GOV_SCHEDUTIL
+./scripts/config --enable CONFIG_ENERGY_MODEL # feeds power cost data into SCHEDUTIL for smarter P-state decisions
 
 # Disable all other default-governor options (only one can be default)
 ./scripts/config --disable CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE
@@ -163,8 +165,8 @@ echo "Kernel config here!"
 
 # --- Hardware monitoring (MSI X670E) -----------------------------------------
 ./scripts/config --enable CONFIG_HWMON
-./scripts/config --module CONFIG_NCT6683              # Mainboard-Sensor (als Modul)
-./scripts/config --module CONFIG_SENSORS_NCT6687      # Mainboard-Sensor (als Modul)
+./scripts/config --module CONFIG_SENSORS_NCT6683      # Mainboard-Sensor (als Modul)
+# NCT6687D is now handled by the nct6683 driver (CONFIG_SENSORS_NCT6683)
 ./scripts/config --module CONFIG_SENSORS_K10TEMP      # Ryzen temp sensor (als Modul)
 ./scripts/config --module CONFIG_SENSORS_FAM15H_POWER # Ryzen power sensor (als Modul)
 
@@ -240,7 +242,7 @@ echo "Kernel config here!"
 # --- Sound: onboard Realtek via HDA Intel – no HDMI audio -------------------
 ./scripts/config --module  CONFIG_SND_HDA_INTEL         # Als Modul (wird nur bei Bedarf geladen)
 ./scripts/config --module  CONFIG_SND_HDA_CODEC_REALTEK # Als Modul
-./scripts/config --module  CONFIG_SND_HDA_CODEC_GENERIC # Als Modul
+./scripts/config --module  CONFIG_SND_HDA_GENERIC       # Als Modul (renamed from SND_HDA_CODEC_GENERIC in 6.18)
 ./scripts/config --disable CONFIG_SND_HDA_CODEC_HDMI
 ./scripts/config --disable CONFIG_SND_HDA_INTEL_HDMI_SILENT_STREAM
 ./scripts/config --disable CONFIG_SOUND_HDA_CODEC_HDMI # belt-and-suspenders
@@ -255,7 +257,7 @@ echo "Kernel config here!"
 ./scripts/config --enable CONFIG_USB_XHCI_HCD
 ./scripts/config --enable CONFIG_USB_STORAGE_QUIRKS
 ./scripts/config --module CONFIG_USB_PRINTER
-./scripts/config --disable CONFIG_USB_EHCI_HCD
+./scripts/config --module CONFIG_USB_EHCI_HCD # USB 2.0; some internal headers may bypass xHCI
 
 # --- Input -------------------------------------------------------------------
 ./scripts/config --enable CONFIG_INPUT_EVDEV
@@ -335,7 +337,7 @@ done
 ./scripts/config --enable CONFIG_MQ_IOSCHED_DEADLINE
 ./scripts/config --enable CONFIG_IOSCHED_BFQ
 ./scripts/config --enable CONFIG_BFQ_GROUP_IOSCHED
-./scripts/config --set-str CONFIG_DEFAULT_IOSCHED "bfq"
+./scripts/config --set-str CONFIG_DEFAULT_IOSCHED "mq-deadline" # lower overhead on NVMe; udev assigns BFQ to rotational devices
 
 # --- Filesystems -------------------------------------------------------------
 ./scripts/config --enable CONFIG_EXT4_FS
@@ -413,6 +415,7 @@ done
 ./scripts/config --disable CONFIG_GENKSYMS
 ./scripts/config --disable CONFIG_FTRACE
 ./scripts/config --disable CONFIG_KPROBES
+./scripts/config --disable CONFIG_LIVEPATCH
 ./scripts/config --disable CONFIG_DEBUG_INFO_BTF
 ./scripts/config --disable CONFIG_DEBUG_INFO
 ./scripts/config --disable CONFIG_DEBUG_INFO_DWARF4
