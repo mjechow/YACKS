@@ -8,7 +8,7 @@ set -euo pipefail
 
 DEBUG=0
 VERBOSITY=0
-REV=
+REV= # optional build revision suffix; if set, appended to LOCALVERSION as -$REV (e.g. REV=2 → username-hostname-2)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 KERNEL_CONFIG="${SCRIPT_DIR}/kernel_config.sh"
@@ -56,7 +56,6 @@ info "Using GCC ${GCC_MAJOR}"
 
 # --- Clean & reset git -------------------------------------------------------
 info "Cleanup and checkout..."
-make CC=gcc distclean || die "make distclean failed – is this a valid kernel source tree?"
 git reset --hard && git clean -dfx  # NOTE: change if patches once introduced
 
 # --- Determine kernel version from git tag -----------------------------------
@@ -72,7 +71,7 @@ KERNEL_VERSION_LONG=$(echo "$KERNEL_VERSION" | awk -F. '{printf "%02d%02d%02d", 
 DEB_FILENAME="linux-modules-${KERNEL_VERSION}-${KERNEL_VERSION_LONG}-generic_${KERNEL_VERSION}-${KERNEL_VERSION_LONG}"
 
 # Find the exact .deb name (timestamp suffix varies)
-DEB_FILE=$(curl -sL "$UBUNTU_BASE_URL" |
+DEB_FILE=$(curl --connect-timeout 10 --max-time 30 -sL "$UBUNTU_BASE_URL" |
   grep -Eo "${DEB_FILENAME}.[0-9]{12}_amd64.deb" |
   head -1) || warn "Could not find .deb for kernel ${KERNEL_VERSION} at ${UBUNTU_BASE_URL}"
 [[ -z "$DEB_FILE" ]] && {
@@ -97,7 +96,7 @@ fetch_ubuntu_config() {
     extract_ubuntu_config
   else
     info "Downloading kernel ${KERNEL_VERSION} config from Ubuntu mainline..."
-    if [[ -n "$DEB_CACHE" ]] && wget --show-progress -O "$DEB_CACHE" -q "$DEB_URL"; then
+    if [[ -n "$DEB_FILE" ]] && curl --connect-timeout 10 --max-time 600 -L --progress-bar -o "$DEB_CACHE" "$DEB_URL"; then
       success "Download complete."
       extract_ubuntu_config
     else
@@ -113,8 +112,9 @@ fetch_ubuntu_config() {
 info "Generating base kernel config..."
 fetch_ubuntu_config
 
+info "Expanding config defaults..."
+make CC=gcc olddefconfig || die "Configuration processing failed!"
 info "Applying custom kernel options..."
-make CC=gcc olddefconfig || die "Configuration processing failed!\n"
 # shellcheck source=kernel_config.sh
 source "$KERNEL_CONFIG"
 success "Custom options applied."
@@ -122,9 +122,9 @@ echo
 
 info "Validating and updating configuration..."
 cp .config "$SCRIPT_DIR/config-$KERNEL_VERSION-$LOCALVERSION"
-make CC=gcc olddefconfig || die "Configuration processing failed!\n"
+make CC=gcc olddefconfig || die "Configuration processing failed!"
 ./scripts/diffconfig "$SCRIPT_DIR/config-$KERNEL_VERSION-$LOCALVERSION" .config \
-  > "$SCRIPT_DIR/config-$KERNEL_VERSION-$LOCALVERSION".diff || die "Diffing configs failed!\n"
+  > "$SCRIPT_DIR/config-$KERNEL_VERSION-$LOCALVERSION".diff || die "Diffing configs failed!"
 success "Done."
 echo
 
@@ -148,7 +148,7 @@ if ! time nice make -j"$N_PROC" \
   INSTALL_MOD_STRIP=1 \
   KCFLAGS="-march=znver4 -mtune=znver4 -pipe" \
   V=$VERBOSITY \
-  bindeb-pkg 2>&1 | tee ../$BUILD_LOG_FILE; then
+  bindeb-pkg 2>&1 | tee "$SCRIPT_DIR/$BUILD_LOG_FILE"; then
   die "Build failed. Check $SCRIPT_DIR/$BUILD_LOG_FILE for details."
 fi
 
