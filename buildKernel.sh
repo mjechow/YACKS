@@ -8,16 +8,29 @@ set -euo pipefail
 
 DEBUG=0
 VERBOSITY=0
-REV=3 # optional build revision suffix; if set, appended to LOCALVERSION as -$REV (e.g. REV=2 → username-hostname-2)
+REV= # optional build revision suffix; if set, appended to LOCALVERSION as -$REV (e.g. REV=2 → username-hostname-2)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+KERNEL_CONFIG="${SCRIPT_DIR}/kernel_config.sh"
+KERNEL_SRC_DIR="linux"
+BUILD_LOG_FILE="kernelBuild.log"
+LOCALVERSION="$(whoami)-$(hostname -s)${REV:+-$REV}"
+
+ARCH="$(uname -m)"
+export ARCH
+export CCACHE_DIR="${SCRIPT_DIR}/ccache_kernel" # separater Cache vom normalen ccache
+export CCACHE_MAXSIZE="10G"
+export LD=ld.bfd
+# shfmt-ignore
+export N_PROC=$(($(nproc) + 2)) # default: +2; you should configure a maximum of 1.5x CPU cores for faster builds on I/O bound systems
 
 # --- Clean mode --------------------------------------------------------------
 if [[ "${1:-}" == "--clean" ]]; then
   cd "$SCRIPT_DIR"
   mkdir -p old
-  mv -f linux-*.deb config-* old/ 2> /dev/null || true
-  git clean -fdX -e ccache_kernel/ -e linux/ -e old/ -e LOCAL.md
+  mv -f ./linux-image-*.deb ./linux-headers-*.deb ./linux-libc-dev_*.deb config-* old/ 2> /dev/null || true
+  rm -f ./*.log ./*.buildinfo ./*.changes ./linux-modules-*.deb
 
   # Prune old/ – keep only the 2 most recent kernel versions
   # shellcheck disable=SC2012 # filenames are controlled, no special chars
@@ -30,19 +43,15 @@ if [[ "${1:-}" == "--clean" ]]; then
   exit 0
 fi
 
-KERNEL_CONFIG="${SCRIPT_DIR}/kernel_config.sh"
-KERNEL_SRC_DIR="linux"
-BUILD_LOG_FILE="kernelBuild.log"
-LOCALVERSION="$(whoami)-$(hostname -s)${REV:+-$REV}"
-
-ARCH="$(uname -m)"
-export ARCH
-export CCACHE_DIR="${SCRIPT_DIR}/ccache_kernel" # separater Cache vom normalen ccache
-export CCACHE_MAXSIZE="10G"
-export CXX="ccache g++"
-export LD=ld.bfd
-# shfmt-ignore
-export N_PROC=$(($(nproc) + 2)) # default: +2; you should configure a maximum of 1.5x CPU cores for faster builds on I/O bound systems
+# --- Tools mode: build and install cpupower from kernel source ---------------
+if [[ "${1:-}" == "--tools" ]]; then
+  cd "$SCRIPT_DIR/$KERNEL_SRC_DIR"
+  make -j"$N_PROC" -C tools/power/cpupower
+  sudo make -C tools/power/cpupower install
+  sudo ldconfig
+  echo "cpupower installed."
+  exit 0
+fi
 
 # --- Helpers -----------------------------------------------------------------
 info() { printf "[*] %s\n" "$@"; }
@@ -71,6 +80,8 @@ fi
 GCC_MAJOR=$(gcc -dumpversion | cut -d. -f1)
 info "Using GCC ${GCC_MAJOR}"
 [[ "$GCC_MAJOR" -lt 13 ]] && die "GCC 13+ required for znver4, found GCC ${GCC_MAJOR}"
+
+command -v ccache &> /dev/null || die "ccache not found."
 
 # --- Clean & reset git -------------------------------------------------------
 info "Cleanup and checkout..."
@@ -122,8 +133,8 @@ fetch_ubuntu_config() {
       cp /boot/config-"$(uname -r)" .config || die "Failed to copy running kernel config"
     fi
   fi
-  # Keep a human-readable copy outside the source tree
-  cp .config "$SCRIPT_DIR/config-$KERNEL_VERSION${REV:+-$REV}" || warn "Failed to save config copy outside source tree"
+  # Keep a copy of the base config before customization
+  cp .config "$SCRIPT_DIR/config-$KERNEL_VERSION" || warn "Failed to save base config copy"
 }
 
 # --- Generate base config ----------------------------------------------------
@@ -162,7 +173,6 @@ read -rp "Compile this kernel? [y/N] " confirm
 info "Starting build ($N_PROC threads)..."
 if ! time nice make -j"$N_PROC" \
   CC="ccache gcc" \
-  ARCH=x86_64 \
   LOCALVERSION="-$LOCALVERSION" \
   INSTALL_MOD_STRIP=1 \
   KCFLAGS="-march=znver4 -mtune=znver4 -pipe" \
@@ -170,9 +180,6 @@ if ! time nice make -j"$N_PROC" \
   bindeb-pkg 2>&1 | tee "$SCRIPT_DIR/$BUILD_LOG_FILE"; then
   die "Build failed. Check $SCRIPT_DIR/$BUILD_LOG_FILE for details."
 fi
-
-# time nice make -j"$N_PROC" tools/cpupower ARCH=x86_64 | tee ../tools.log
-# sudo time nice make -j"$N_PROC" tools/cpupower_install
 
 # --- Done --------------------------------------------------------------------
 success "Build successful!"

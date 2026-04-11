@@ -84,10 +84,14 @@ Edit variables at the top of `buildKernel.sh` before running:
 The build uses a **separate ccache directory** (`ccache_kernel/`, 10 GB max) to
 avoid interfering with your regular ccache.
 
-To clean up build artifacts (`.deb`, configs, logs) and archive debs to `old/`:
+Additional commands:
 
 ```bash
+# Clean build artifacts, archive debs to old/ (keeps last 2 versions)
 ./buildKernel.sh --clean
+
+# Build and install cpupower from kernel source (one-time, requires sudo)
+./buildKernel.sh --tools
 ```
 
 ## Key Optimizations
