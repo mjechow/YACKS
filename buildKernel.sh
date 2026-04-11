@@ -11,6 +11,25 @@ VERBOSITY=0
 REV=3 # optional build revision suffix; if set, appended to LOCALVERSION as -$REV (e.g. REV=2 → username-hostname-2)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# --- Clean mode --------------------------------------------------------------
+if [[ "${1:-}" == "--clean" ]]; then
+  cd "$SCRIPT_DIR"
+  mkdir -p old
+  mv -f linux-*.deb config-* old/ 2> /dev/null || true
+  git clean -fdX -e ccache_kernel/ -e linux/ -e old/ -e LOCAL.md
+
+  # Prune old/ – keep only the 2 most recent kernel versions
+  # shellcheck disable=SC2012 # filenames are controlled, no special chars
+  ls -t old/linux-image-*.deb 2> /dev/null | tail -n +3 | while read -r img; do
+    ver=${img#old/linux-image-}; ver=${ver%%_*}
+    rm -f old/*"${ver}"*
+  done
+
+  echo "Clean complete. Debs and configs archived to old/ (last 2 kept)."
+  exit 0
+fi
+
 KERNEL_CONFIG="${SCRIPT_DIR}/kernel_config.sh"
 KERNEL_SRC_DIR="linux"
 BUILD_LOG_FILE="kernelBuild.log"
