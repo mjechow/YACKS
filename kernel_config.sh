@@ -20,8 +20,9 @@
 # External Hardware
 #   Keyboard:       Logitech MX Keys (USB receiver)
 #   Mouse:          Asus ROG Keris Wireless Aimpoint (USB receiver)
-#   Monitor:        Dell U2715H
+#   Monitor:        Asus ProArt PA278CGRV (2560x1440, 144 Hz, DisplayPort)
 #   DVD-Writer:     TSSTcorp SH-S203D CDRFS/UDF
+#	  USB Dock:       Anker 675
 #   Printer:        Color Laser Jet Pro MFP M477fdn
 #   SDCard Reader:  Lexar USB 3.0 LRW400U Rev A (connected via USB) exfat
 #   SD Card Reader: Graugear G-MP01CR fat/fat32
