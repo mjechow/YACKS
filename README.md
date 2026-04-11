@@ -27,16 +27,19 @@ size.
 
 ## Target Hardware
 
-| Component   | Model                                                  |
-| ----------- | ------------------------------------------------------ |
-| Mainboard   | MSI MPG X670E Carbon WiFi                              |
-| CPU         | AMD Ryzen 9 7950X3D (Zen 4, 16c/32t)                  |
-| RAM         | Kingston FURY Beast 64 GB DDR5-6000 CL30               |
-| SSD         | Samsung 970 EVO Plus 1 TB (NVMe PCIe 3.0)             |
-| GPU         | NVIDIA GeForce RTX 3070 (AMD GPU disabled in BIOS)     |
-| Network     | Realtek RTL8125 2.5GbE (r8169 driver), no WiFi         |
-| Sound       | Onboard Realtek via HDA Intel (no HDMI audio)          |
-| OS          | Linux Mint 22.3                                        |
+AMD Zen 4 (Ryzen 9 7950X3D), NVIDIA GPU, Linux Mint 22.3.
+See `kernel_config.sh` for the full hardware profile.
+
+## Firmware
+
+The Realtek RTL8125 NIC (r8169 driver) requires firmware files not yet
+included in the `linux-firmware` package. Download and install manually:
+
+```bash
+wget https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/plain/rtl_nic/rtl8125k-1.fw
+wget https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/plain/rtl_nic/rtl9151a-1.fw
+sudo cp rtl8125k-1.fw rtl9151a-1.fw /lib/firmware/rtl_nic/
+```
 
 ## Requirements
 
@@ -71,15 +74,21 @@ sudo dpkg -i linux-image-*.deb linux-headers-*.deb linux-libc-dev_*.deb
 
 Edit variables at the top of `buildKernel.sh` before running:
 
-| Variable    | Default         | Description                                              |
-| ----------- | --------------- | -------------------------------------------------------- |
-| `DEBUG`     | `0`             | Set to `1` for debug output (also enables VERBOSITY)     |
-| `VERBOSITY` | `0`             | Set to `1` for verbose `make` output                     |
-| `REV`       | _(empty)_       | Optional revision suffix (e.g. `REV=2` → `user-host-2`) |
-| `N_PROC`    | `$(nproc) + 2`  | Parallel make jobs (max 1.5x cores for I/O-bound builds) |
+| Variable    | Default        | Description                                              |
+| ----------- | -------------- | -------------------------------------------------------- |
+| `DEBUG`     | `0`            | Set to `1` for debug output (also enables VERBOSITY)     |
+| `VERBOSITY` | `0`            | Set to `1` for verbose `make` output                     |
+| `REV`       | _(empty)_      | Optional revision suffix (e.g. `REV=2` → `user-host-2`) |
+| `N_PROC`    | `$(nproc) + 2` | Parallel make jobs (max 1.5x cores for I/O-bound builds) |
 
 The build uses a **separate ccache directory** (`ccache_kernel/`, 10 GB max) to
 avoid interfering with your regular ccache.
+
+To clean up build artifacts (`.deb`, configs, logs) and archive debs to `old/`:
+
+```bash
+./buildKernel.sh --clean
+```
 
 ## Key Optimizations
 
@@ -123,19 +132,6 @@ pre-commit install
 
 # Run all hooks manually
 pre-commit run --all-files
-```
-
-Manual linting:
-
-```bash
-# Check shell formatting
-shfmt -i 2 -ci -sr -kp -d buildKernel.sh kernel_config.sh
-
-# Fix shell formatting
-shfmt -i 2 -ci -sr -kp -w buildKernel.sh kernel_config.sh
-
-# Lint shell scripts
-shellcheck buildKernel.sh kernel_config.sh
 ```
 
 **shfmt style:** 2-space indent (`-i 2`), case indent (`-ci`), space after

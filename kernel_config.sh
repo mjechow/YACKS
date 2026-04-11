@@ -80,7 +80,6 @@ echo "Kernel config here!"
 ./scripts/config --enable  CONFIG_TICK_CPU_ACCOUNTING
 ./scripts/config --disable CONFIG_VIRT_CPU_ACCOUNTING_GEN
 ./scripts/config --disable CONFIG_NTP_PPS # desktop doesn't need PPS
-./scripts/config --set-val CONFIG_RCU_BOOST_DELAY 500
 ./scripts/config --disable  CONFIG_SCHED_CLASS_EXT
 ./scripts/config --disable CONFIG_SCHED_CORE
 ./scripts/config --enable  CONFIG_SCHED_AUTOGROUP # groups processes by TTY session; prevents make -j32 from starving the desktop
@@ -133,7 +132,6 @@ echo "Kernel config here!"
 ./scripts/config --enable CONFIG_EDAC_DECODE_MCE
 ./scripts/config --enable CONFIG_EDAC_AMD64
 ./scripts/config --enable CONFIG_AMD_IOMMU
-./scripts/config --enable CONFIG_AMD_IOMMU_V2
 ./scripts/config --enable CONFIG_X86_AMD_PLATFORM_DEVICE
 ./scripts/config --enable CONFIG_PINCTRL_AMD
 ./scripts/config --module CONFIG_I2C_PIIX4    # AMD SMBus (als Modul)
@@ -240,13 +238,23 @@ echo "Kernel config here!"
 ./scripts/config --disable CONFIG_DRM_ACCEL_QAIC
 ./scripts/config --disable CONFIG_DRM_ACCEL_AMDXDNA
 
-# --- Sound: onboard Realtek via HDA Intel – no HDMI audio -------------------
-./scripts/config --module  CONFIG_SND_HDA_INTEL         # Als Modul (wird nur bei Bedarf geladen)
-./scripts/config --module  CONFIG_SND_HDA_CODEC_REALTEK # Als Modul
-./scripts/config --module  CONFIG_SND_HDA_GENERIC       # Als Modul (renamed from SND_HDA_CODEC_GENERIC in 6.18)
-./scripts/config --disable CONFIG_SND_HDA_CODEC_HDMI
+# --- Sound: Realtek ALC4080 via HD Audio controller – no HDMI audio --------
+./scripts/config --module  CONFIG_SND_HDA_INTEL
+./scripts/config --module  CONFIG_SND_HDA_CODEC_REALTEK
+./scripts/config --module  CONFIG_SND_HDA_GENERIC       # renamed from SND_HDA_CODEC_GENERIC in 6.18
+
+# Disable all unused HDA codecs and HDMI audio
+for c in ANALOG SIGMATEL VIA CONEXANT SENARYTECH CA0110 CA0132 CMEDIA CM9825 \
+  SI3054 CIRRUS CS420X CS421X CS8409 \
+  HDMI HDMI_GENERIC HDMI_SIMPLE HDMI_INTEL HDMI_ATI HDMI_NVIDIA \
+  HDMI_NVIDIA_MCP HDMI_TEGRA; do
+  ./scripts/config --disable "CONFIG_SND_HDA_CODEC_${c}"
+done
 ./scripts/config --disable CONFIG_SND_HDA_INTEL_HDMI_SILENT_STREAM
-./scripts/config --disable CONFIG_SOUND_HDA_CODEC_HDMI # belt-and-suspenders
+./scripts/config --disable CONFIG_SOUND_HDA_CODEC_HDMI
+
+# Disable entire Intel SOC audio stack (not needed on AMD)
+./scripts/config --disable CONFIG_SND_SOC_INTEL_SST_TOPLEVEL
 
 # PipeWire / PulseAudio basics
 ./scripts/config --module CONFIG_SND_TIMER
@@ -256,7 +264,6 @@ echo "Kernel config here!"
 ./scripts/config --enable CONFIG_USB_SUPPORT
 ./scripts/config --enable CONFIG_USB_STORAGE
 ./scripts/config --enable CONFIG_USB_XHCI_HCD
-./scripts/config --enable CONFIG_USB_STORAGE_QUIRKS
 ./scripts/config --module CONFIG_USB_PRINTER
 ./scripts/config --module CONFIG_USB_EHCI_HCD # USB 2.0; some internal headers may bypass xHCI
 
