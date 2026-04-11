@@ -48,13 +48,16 @@ size.
 
 ## Quick Start
 
+Using an LTS kernel version is recommended for stability and longer support.
+Currently tested against the `linux-rolling-lts` branch.
+
 ```bash
 # Clone the kernel sources next to the scripts
 git clone https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git
 
-# Check out the desired version
+# Check out the rolling LTS branch
 cd linux
-git checkout v6.12.3
+git checkout linux-rolling-lts
 cd ..
 
 # Build
@@ -101,7 +104,7 @@ EROFS), and IPX/AppleTalk/X.25/DECnet protocols.
 
 ## Project Structure
 
-```
+```text
 buildKernel.sh       Main build orchestrator
 kernel_config.sh     All kernel config customizations (sourced by buildKernel.sh)
 linux/               Kernel source tree (cloned separately, not tracked)
@@ -110,7 +113,19 @@ ccache_kernel/       Dedicated ccache directory (generated)
 
 ## Linting
 
-CI runs [MegaLinter](https://megalinter.io) on push to `main` and on PRs:
+CI runs [pre-commit](https://pre-commit.com) on push to `main` and on PRs.
+The same hooks run locally before each commit:
+
+```bash
+# Install pre-commit hooks (one-time setup)
+pip install pre-commit
+pre-commit install
+
+# Run all hooks manually
+pre-commit run --all-files
+```
+
+Manual linting:
 
 ```bash
 # Check shell formatting
@@ -131,4 +146,3 @@ redirect (`-sr`), keep column alignment (`-kp`).
 - Replace the monolithic `kernel_config.sh` with composable config fragments
   (e.g. `fragment-amd.config`, `fragment-nvidia.config`) using
   `scripts/kconfig/merge_config.sh` for proper dependency resolution
-
