@@ -12,7 +12,7 @@ REV= # optional build revision suffix; if set, appended to LOCALVERSION as -$REV
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-KERNEL_CONFIG="${SCRIPT_DIR}/kernel_config.sh"
+FRAGMENTS_DIR="${SCRIPT_DIR}/fragments"
 KERNEL_SRC_DIR="linux"
 BUILD_LOG_FILE="kernelBuild.log"
 LOCALVERSION="$(whoami)-$(hostname -s)${REV:+-$REV}"
@@ -143,17 +143,35 @@ fetch_ubuntu_config
 
 info "Expanding config defaults..."
 make CC=gcc olddefconfig || die "Configuration processing failed!"
-info "Applying custom kernel options..."
-# shellcheck source=kernel_config.sh
-source "$KERNEL_CONFIG"
-success "Custom options applied."
-echo
 
-info "Validating and updating configuration..."
+FRAGMENT_FILES=(
+  "${FRAGMENTS_DIR}/base.config"
+  "${FRAGMENTS_DIR}/cpu-amd-zen4.config"
+  "${FRAGMENTS_DIR}/gpu-nvidia.config"
+  "${FRAGMENTS_DIR}/sound-realtek.config"
+  "${FRAGMENTS_DIR}/network-realtek.config"
+  "${FRAGMENTS_DIR}/storage.config"
+  "${FRAGMENTS_DIR}/hardware-desktop.config"
+)
+
+info "Merging config fragments..."
+# -m = merge only; we run olddefconfig ourselves afterward.
+# Without -m, merge_config.sh runs alldefconfig and validates every value in the
+# merged file (Ubuntu base + fragments), producing thousands of irrelevant
+# warnings for options that don't exist in this kernel version.
+scripts/kconfig/merge_config.sh -m -Q .config "${FRAGMENT_FILES[@]}" \
+  || die "Config fragment merge failed!"
+
+info "Resolving Kconfig dependencies..."
 cp .config "$SCRIPT_DIR/config-$KERNEL_VERSION-$LOCALVERSION"
 make CC=gcc olddefconfig || die "Configuration processing failed!"
+success "Fragments merged."
+echo
+
+info "Diffing: changes made by olddefconfig..."
 ./scripts/diffconfig "$SCRIPT_DIR/config-$KERNEL_VERSION-$LOCALVERSION" .config \
   > "$SCRIPT_DIR/config-$KERNEL_VERSION-$LOCALVERSION".diff || die "Diffing configs failed!"
+cp .config "$SCRIPT_DIR/config-$KERNEL_VERSION-$LOCALVERSION"
 success "Done."
 echo
 

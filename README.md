@@ -12,8 +12,9 @@ installable `.deb` packages.
 
 1. Fetches the matching Ubuntu mainline `.deb` and extracts its `.config`
    (falls back to the running kernel config if the download fails)
-2. Applies ~200 config tweaks via `kernel_config.sh` for a specific hardware
-   profile (see [Target Hardware](#target-hardware))
+2. Merges hardware-specific config fragments from `fragments/` using
+   `scripts/kconfig/merge_config.sh` for proper Kconfig dependency resolution
+   (see [Target Hardware](#target-hardware) and [Config Fragments](#config-fragments))
 3. Builds the kernel with `make bindeb-pkg`, producing `linux-image`,
    `linux-headers`, and `linux-libc-dev` packages
 
@@ -28,7 +29,8 @@ size.
 ## Target Hardware
 
 AMD Zen 4 (Ryzen 9 7950X3D), NVIDIA GPU, Linux Mint 22.3.
-See `kernel_config.sh` for the full hardware profile.
+See `fragments/cpu-amd-zen4.config` and `fragments/hardware-desktop.config` for
+the full hardware profile.
 
 ## Firmware
 
@@ -121,11 +123,31 @@ tuners and DVB (only UVC webcam kept), IR remote controls, touchscreen input
 drivers, all hardware watchdog drivers, non-AMD crypto accelerators (Intel QAT,
 Cavium, etc.), and ChromeOS/Surface/Mellanox platform drivers.
 
+## Config Fragments
+
+Kernel config customizations are split into composable fragments under
+`fragments/`, merged by `scripts/kconfig/merge_config.sh`. Each fragment groups
+related options so only the relevant files need to change when hardware changes.
+
+| Fragment | Contents |
+|---|---|
+| `base.config` | Compiler/LTO, zstd, zswap, scheduling, preemption, timer, security, debug, module signing |
+| `cpu-amd-zen4.config` | Ryzen 9 7950X3D: P-state, EDAC, SMBus, AES-NI, ACPI, PCIe, hardware monitoring |
+| `gpu-nvidia.config` | RTX 3070: DRM core + SimpleDRM; disables nouveau, AMD GPU, Intel GPU |
+| `sound-realtek.config` | HDA Intel + Realtek ALC4080; disables all unused HDA codecs and HDMI audio |
+| `network-realtek.config` | RTL8125 2.5GbE, Bluetooth; disables WiFi and all other NIC vendors; BBR/FQ/Cake |
+| `storage.config` | NVMe, SATA, SCSI, BFQ scheduler, filesystems; disables exotic FS and enterprise HBA |
+| `hardware-desktop.config` | USB, HID, SD card readers, UVC webcam, watchdog off, no-AMD crypto accelerators, VFIO |
+
+Fragments are applied in the order listed; later fragments take precedence on
+conflicts. `merge_config.sh` runs `make olddefconfig` after the merge, so
+Kconfig `select` and `depends` chains are always resolved correctly.
+
 ## Project Structure
 
 ```text
 buildKernel.sh       Main build orchestrator
-kernel_config.sh     All kernel config customizations (sourced by buildKernel.sh)
+fragments/           Composable Kconfig fragments (merged by merge_config.sh)
 linux/               Kernel source tree (cloned separately, not tracked)
 ccache_kernel/       Dedicated ccache directory (generated)
 ```
@@ -149,16 +171,14 @@ redirect (`-sr`), keep column alignment (`-kp`).
 
 ## Kernel Config Gotchas
 
-- `./scripts/config` uppercases option names by default (`MUNGE_CASE=yes`). Mixed-case
-  options like `CONFIG_CRYPTO_DEV_QAT_DH895xCC` must be addressed with `--keep-case`,
-  otherwise the script appends a bogus uppercase stub and leaves the real option enabled.
-  All calls in `kernel_config.sh` use `--keep-case` for this reason.
-- `./scripts/config` silently does nothing if an option does not exist (renamed/removed
-  between kernel versions). Always verify changes via the generated `.diff` file after
-  `make olddefconfig`.
+- `merge_config.sh` warns on conflicts (later fragment wins) and on fragment
+  values that did not make it into the final `.config` (missing dependencies or
+  removed symbols). After a kernel version bump, watch for these warnings and
+  also check the generated `.diff` file to catch renamed or removed options.
+- Options set in a fragment that are overridden by a Kconfig `select` in a
+  later `olddefconfig` pass will appear in the diff as reverted — this is
+  expected; move conflicting options to the fragment that enables their parent.
 
 ## Roadmap
 
-- Replace the monolithic `kernel_config.sh` with composable config fragments
-  (e.g. `fragment-amd.config`, `fragment-nvidia.config`) using
-  `scripts/kconfig/merge_config.sh` for proper dependency resolution
+No open items.
