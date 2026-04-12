@@ -113,7 +113,13 @@ To reduce build time and kernel footprint, the following are disabled:
 WiFi stack, Intel/AMD/virtual GPU drivers, nouveau, game controllers,
 hamradio, CAN, NFC, WiMAX, PCMCIA, FireWire, InfiniBand, ISDN, parallel port,
 floppy, ~60 unused NIC vendors, exotic filesystems (XFS, ReiserFS, JFS, NILFS2,
-EROFS), and IPX/AppleTalk/X.25/DECnet protocols.
+EROFS, OCFS2, GFS2, Ceph, OrangeFS, AFS, 9P, Coda, HFS/HFS+, Minix, ROMFS,
+CRAMFS, UFS), IPX/AppleTalk/X.25/DECnet protocols, ATM networking, Xen and
+Hyper-V guest support, staging drivers, all SCSI HBA drivers (Fibre Channel,
+SAS, iSCSI adapters), enterprise NICs (Chelsio, Broadcom bnx2x), media/TV
+tuners and DVB (only UVC webcam kept), IR remote controls, touchscreen input
+drivers, all hardware watchdog drivers, non-AMD crypto accelerators (Intel QAT,
+Cavium, etc.), and ChromeOS/Surface/Mellanox platform drivers.
 
 ## Project Structure
 
@@ -140,6 +146,16 @@ pre-commit run --all-files
 
 **shfmt style:** 2-space indent (`-i 2`), case indent (`-ci`), space after
 redirect (`-sr`), keep column alignment (`-kp`).
+
+## Kernel Config Gotchas
+
+- `./scripts/config` uppercases option names by default (`MUNGE_CASE=yes`). Mixed-case
+  options like `CONFIG_CRYPTO_DEV_QAT_DH895xCC` must be addressed with `--keep-case`,
+  otherwise the script appends a bogus uppercase stub and leaves the real option enabled.
+  All calls in `kernel_config.sh` use `--keep-case` for this reason.
+- `./scripts/config` silently does nothing if an option does not exist (renamed/removed
+  between kernel versions). Always verify changes via the generated `.diff` file after
+  `make olddefconfig`.
 
 ## Roadmap
 
