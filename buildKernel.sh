@@ -191,7 +191,7 @@ info "Kernel version: ${KERNEL_VERSION}"
 echo
 
 DIFF_FILE="$SCRIPT_DIR/config-$KERNEL_VERSION-$LOCALVERSION.diff"
-FLIPS=$(grep -E ' [yn] -> [yn]$' "$DIFF_FILE" || true)
+FLIPS=$(grep -E ' [ymn] -> [ymn]$' "$DIFF_FILE" || true)
 if [[ -n "$FLIPS" ]]; then
   warn "olddefconfig flipped the following options:"
   echo "$FLIPS"
