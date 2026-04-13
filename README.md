@@ -10,12 +10,14 @@ installable `.deb` packages.
 
 ## What It Does
 
-1. Fetches the matching Ubuntu mainline `.deb` and extracts its `.config`
+1. Checks whether the kernel source tree is up to date with its upstream remote
+   (`git fetch` + HEAD vs `@{u}` comparison); warns if behind
+2. Fetches the matching Ubuntu mainline `.deb` and extracts its `.config`
    (falls back to the running kernel config if the download fails)
-2. Merges hardware-specific config fragments from `fragments/` using
+3. Merges hardware-specific config fragments from `fragments/` using
    `scripts/kconfig/merge_config.sh` for proper Kconfig dependency resolution
    (see [Target Hardware](#target-hardware) and [Config Fragments](#config-fragments))
-3. Builds the kernel with `make bindeb-pkg`, producing `linux-image`,
+4. Builds the kernel with `make bindeb-pkg`, producing `linux-image`,
    `linux-headers`, and `linux-libc-dev` packages
 
 ## Who Is It For
@@ -80,7 +82,7 @@ Edit variables at the top of `buildKernel.sh` before running:
 | ----------- | -------------- | -------------------------------------------------------- |
 | `DEBUG`     | `0`            | Set to `1` for debug output (also enables VERBOSITY)     |
 | `VERBOSITY` | `0`            | Set to `1` for verbose `make` output                     |
-| `REV`       | _(empty)_      | Optional revision suffix (e.g. `REV=2` → `user-host-2`) |
+| `REV`       | _(empty)_      | Optional revision suffix (e.g. `REV=2` → `user-host-2`)  |
 | `N_PROC`    | `$(nproc) + 2` | Parallel make jobs (max 1.5x cores for I/O-bound builds) |
 
 The build uses a **separate ccache directory** (`ccache_kernel/`, 10 GB max) to
@@ -89,7 +91,7 @@ avoid interfering with your regular ccache.
 Additional commands:
 
 ```bash
-# Clean build artifacts, archive debs to old/ (keeps last 2 versions)
+# Clean build artifacts, archive debs to old/ (keeps last 2 versions), reset kernel source tree
 ./buildKernel.sh --clean
 
 # Build and install cpupower from kernel source (one-time, requires sudo)
@@ -112,16 +114,26 @@ Additional commands:
 ## Disabled Subsystems
 
 To reduce build time and kernel footprint, the following are disabled:
-WiFi stack, Intel/AMD/virtual GPU drivers, nouveau, game controllers,
-hamradio, CAN, NFC, WiMAX, PCMCIA, FireWire, InfiniBand, ISDN, parallel port,
-floppy, ~60 unused NIC vendors, exotic filesystems (XFS, ReiserFS, JFS, NILFS2,
-EROFS, OCFS2, GFS2, Ceph, OrangeFS, AFS, 9P, Coda, HFS/HFS+, Minix, ROMFS,
-CRAMFS, UFS), IPX/AppleTalk/X.25/DECnet protocols, ATM networking, Xen and
-Hyper-V guest support, staging drivers, all SCSI HBA drivers (Fibre Channel,
-SAS, iSCSI adapters), enterprise NICs (Chelsio, Broadcom bnx2x), media/TV
-tuners and DVB (only UVC webcam kept), IR remote controls, touchscreen input
-drivers, all hardware watchdog drivers, non-AMD crypto accelerators (Intel QAT,
-Cavium, etc.), and ChromeOS/Surface/Mellanox platform drivers.
+
+| Category | Disabled |
+| --- | --- |
+| GPU drivers | Intel (i915, Xe), AMD (amdgpu, radeon), Nouveau — proprietary NVIDIA via DKMS only |
+| Wireless | WiFi stack, NFC, WiMAX, hamradio, CAN, ISDN |
+| Legacy buses | PCMCIA, FireWire, InfiniBand, parallel port, floppy |
+| Legacy storage | All PATA/IDE drivers; unused SATA add-in controllers (Promise, SIL, NV, VIA, ULI, MV…) |
+| NICs | ~60 unused vendors; enterprise cards (Chelsio, Broadcom bnx2x); ~30 legacy USB network adapters |
+| Storage HBAs | All SCSI HBA drivers (Fibre Channel, SAS, iSCSI); FCoE stack; Arcmsr, SYM53C8XX |
+| Filesystems | XFS, ReiserFS, JFS, NILFS2, EROFS, OCFS2, GFS2, Ceph, OrangeFS, AFS, 9P, Coda, HFS/HFS+, Minix, ROMFS, CRAMFS, UFS |
+| Protocols | IPX, AppleTalk, X.25, DECnet, ATM, TIPC, DCCP, RDS, L2TP |
+| Virtualisation | Xen and Hyper-V guest support, staging drivers |
+| Media | TV tuners, DVB, radio, SDR, IR remote controls — UVC webcam kept |
+| Input | Touchscreen, tablet/pen, game controllers (joystick, XInput, PlayStation, Steam), laptop touchpad drivers (ALPS, Elan, Synaptics, Cypress, TrackPoint, FocalTech) |
+| Crypto HW | Non-AMD accelerators: Intel QAT, Marvell/Cavium NITROX+ZIP, VIA Padlock, Atmel secure elements |
+| Platform | ChromeOS, Surface, Mellanox platform drivers; laptop PCIe card readers (Realtek, Alcor) |
+| Industrial / embedded | IIO (sensors), MTD (flash), I3C, GNSS/GPS, CXL, DCA, Greybus, COMEDI, HSI |
+| Accessibility | Braille console, Speakup screen reader |
+| Sound | AMD APU audio (Raven, Renoir, Van Gogh, Yellow Carp, Phoenix, Rembrandt — 7950X3D has no iGPU); all unused HDA codecs; HDMI audio; Intel SOC audio |
+| Misc | Hardware watchdog, NTB, FPGA |
 
 ## Config Fragments
 
@@ -130,14 +142,14 @@ Kernel config customizations are split into composable fragments under
 related options so only the relevant files need to change when hardware changes.
 
 | Fragment | Contents |
-|---|---|
+| --- | --- |
 | `base.config` | Compiler/LTO, zstd, zswap, scheduling, preemption, timer, security, debug, module signing |
 | `cpu-amd-zen4.config` | Ryzen 9 7950X3D: P-state, EDAC, SMBus, AES-NI, ACPI, PCIe, hardware monitoring |
 | `gpu-nvidia.config` | RTX 3070: DRM core + SimpleDRM; disables nouveau, AMD GPU, Intel GPU |
-| `sound-realtek.config` | HDA Intel + Realtek ALC4080; disables all unused HDA codecs and HDMI audio |
-| `network-realtek.config` | RTL8125 2.5GbE, Bluetooth; disables WiFi and all other NIC vendors; BBR/FQ/Cake |
-| `storage.config` | NVMe, SATA, SCSI, BFQ scheduler, filesystems; disables exotic FS and enterprise HBA |
-| `hardware-desktop.config` | USB, HID, SD card readers, UVC webcam, watchdog off, no-AMD crypto accelerators, VFIO |
+| `sound-realtek.config` | HDA Intel + Realtek ALC4080; disables unused HDA codecs, HDMI audio, AMD APU audio, Intel SOC audio |
+| `network-realtek.config` | RTL8125 2.5GbE, Bluetooth; disables WiFi, all other NIC vendors, legacy USB network adapters; BBR/FQ/Cake |
+| `storage.config` | NVMe, SATA, SCSI, BFQ scheduler, filesystems; disables PATA, unused SATA controllers, exotic FS, enterprise HBA/FCoE |
+| `hardware-desktop.config` | USB, HID, SD card readers, UVC webcam, watchdog off, no-AMD crypto accelerators, VFIO; disables laptop touchpad drivers and PCIe card readers |
 
 Fragments are applied in the order listed; later fragments take precedence on
 conflicts. `merge_config.sh` runs `make olddefconfig` after the merge, so
@@ -178,6 +190,15 @@ redirect (`-sr`), keep column alignment (`-kp`).
 - Options set in a fragment that are overridden by a Kconfig `select` in a
   later `olddefconfig` pass will appear in the diff as reverted — this is
   expected; move conflicting options to the fragment that enables their parent.
+- Before each build, `buildKernel.sh` scans the generated `.diff` for any
+  transition involving `n` (`n -> y`, `n -> m`, `y -> n`, `m -> n`) and warns
+  if any are found. These indicate a fragment value was overridden by
+  `olddefconfig`, typically because a `select` dependency pulled something back
+  in. To fix: find the selecting parent with
+  `grep -rn "select CONFIG_FOO" linux/ --include="Kconfig"`, then disable
+  that parent in the appropriate fragment. Note: `scripts/config` silently
+  ignores unknown symbol names — always verify the exact symbol in the Kconfig
+  tree, not just the driver name.
 
 ## Roadmap
 
