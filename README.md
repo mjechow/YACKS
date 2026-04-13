@@ -80,7 +80,7 @@ Edit variables at the top of `buildKernel.sh` before running:
 | ----------- | -------------- | -------------------------------------------------------- |
 | `DEBUG`     | `0`            | Set to `1` for debug output (also enables VERBOSITY)     |
 | `VERBOSITY` | `0`            | Set to `1` for verbose `make` output                     |
-| `REV`       | _(empty)_      | Optional revision suffix (e.g. `REV=2` → `user-host-2`) |
+| `REV`       | _(empty)_      | Optional revision suffix (e.g. `REV=2` → `user-host-2`)  |
 | `N_PROC`    | `$(nproc) + 2` | Parallel make jobs (max 1.5x cores for I/O-bound builds) |
 
 The build uses a **separate ccache directory** (`ccache_kernel/`, 10 GB max) to
@@ -112,16 +112,22 @@ Additional commands:
 ## Disabled Subsystems
 
 To reduce build time and kernel footprint, the following are disabled:
-WiFi stack, Intel/AMD/virtual GPU drivers, nouveau, game controllers,
-hamradio, CAN, NFC, WiMAX, PCMCIA, FireWire, InfiniBand, ISDN, parallel port,
-floppy, ~60 unused NIC vendors, exotic filesystems (XFS, ReiserFS, JFS, NILFS2,
-EROFS, OCFS2, GFS2, Ceph, OrangeFS, AFS, 9P, Coda, HFS/HFS+, Minix, ROMFS,
-CRAMFS, UFS), IPX/AppleTalk/X.25/DECnet protocols, ATM networking, Xen and
-Hyper-V guest support, staging drivers, all SCSI HBA drivers (Fibre Channel,
-SAS, iSCSI adapters), enterprise NICs (Chelsio, Broadcom bnx2x), media/TV
-tuners and DVB (only UVC webcam kept), IR remote controls, touchscreen input
-drivers, all hardware watchdog drivers, non-AMD crypto accelerators (Intel QAT,
-Cavium, etc.), and ChromeOS/Surface/Mellanox platform drivers.
+
+| Category | Disabled |
+| --- | --- |
+| GPU drivers | Intel (i915, Xe), AMD (amdgpu, radeon), Nouveau — proprietary NVIDIA via DKMS only |
+| Wireless | WiFi stack, NFC, WiMAX, hamradio, CAN, ISDN |
+| Legacy buses | PCMCIA, FireWire, InfiniBand, parallel port, floppy |
+| NICs | ~60 unused vendors; enterprise cards (Chelsio, Broadcom bnx2x) |
+| Storage HBAs | All SCSI HBA drivers (Fibre Channel, SAS, iSCSI adapters) |
+| Filesystems | XFS, ReiserFS, JFS, NILFS2, EROFS, OCFS2, GFS2, Ceph, OrangeFS, AFS, 9P, Coda, HFS/HFS+, Minix, ROMFS, CRAMFS, UFS |
+| Protocols | IPX, AppleTalk, X.25, DECnet, ATM |
+| Virtualisation | Xen and Hyper-V guest support, staging drivers |
+| Media | TV tuners, DVB, radio, SDR, IR remote controls — UVC webcam kept |
+| Input | Touchscreen, game controllers (joystick, XInput, PlayStation, Steam) |
+| Crypto HW | Non-AMD accelerators: Intel QAT, Marvell/Cavium NITROX+ZIP, VIA Padlock, Atmel secure elements |
+| Platform | ChromeOS, Surface, Mellanox platform drivers |
+| Misc | Hardware watchdog drivers |
 
 ## Config Fragments
 
@@ -130,7 +136,7 @@ Kernel config customizations are split into composable fragments under
 related options so only the relevant files need to change when hardware changes.
 
 | Fragment | Contents |
-|---|---|
+| --- | --- |
 | `base.config` | Compiler/LTO, zstd, zswap, scheduling, preemption, timer, security, debug, module signing |
 | `cpu-amd-zen4.config` | Ryzen 9 7950X3D: P-state, EDAC, SMBus, AES-NI, ACPI, PCIe, hardware monitoring |
 | `gpu-nvidia.config` | RTX 3070: DRM core + SimpleDRM; disables nouveau, AMD GPU, Intel GPU |
