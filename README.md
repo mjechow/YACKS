@@ -190,10 +190,15 @@ redirect (`-sr`), keep column alignment (`-kp`).
 - Options set in a fragment that are overridden by a Kconfig `select` in a
   later `olddefconfig` pass will appear in the diff as reverted — this is
   expected; move conflicting options to the fragment that enables their parent.
-- Before each build, `buildKernel.sh` scans the generated `.diff` for `y -> n`
-  or `n -> y` flips and warns if any are found. These indicate a fragment value
-  was overridden by `olddefconfig` (e.g. a `select` dependency pulled something
-  back in). Review and fix the responsible fragment before continuing.
+- Before each build, `buildKernel.sh` scans the generated `.diff` for any
+  transition involving `n` (`n -> y`, `n -> m`, `y -> n`, `m -> n`) and warns
+  if any are found. These indicate a fragment value was overridden by
+  `olddefconfig`, typically because a `select` dependency pulled something back
+  in. To fix: find the selecting parent with
+  `grep -rn "select CONFIG_FOO" linux/ --include="Kconfig"`, then disable
+  that parent in the appropriate fragment. Note: `scripts/config` silently
+  ignores unknown symbol names — always verify the exact symbol in the Kconfig
+  tree, not just the driver name.
 
 ## Roadmap
 
