@@ -25,6 +25,24 @@ export LD=ld.bfd
 # shfmt-ignore
 export N_PROC=$(($(nproc) + 2)) # default: +2; you should configure a maximum of 1.5x CPU cores for faster builds on I/O bound systems
 
+# --- Helpers -----------------------------------------------------------------
+info() { printf "[*] %s\n" "$@"; }
+warn() { printf "[!] %s\n" "$@"; }
+debug() {
+  [[ $DEBUG -eq 0 ]] && return 0
+  VERBOSITY=1
+  printf "[D] %s\n" "$@"
+}
+success() { printf "[+] %s\n" "$@"; }
+die() {
+  printf "ERROR: %s\n" "$@" >&2
+  exit 1
+}
+reset_kernel_src() {
+  git -C "$SCRIPT_DIR/$KERNEL_SRC_DIR" reset --hard
+  git -C "$SCRIPT_DIR/$KERNEL_SRC_DIR" clean -dfx  # NOTE: change if patches once introduced
+}
+
 # --- Clean mode --------------------------------------------------------------
 if [[ "${1:-}" == "--clean" ]]; then
   cd "$SCRIPT_DIR"
@@ -39,7 +57,8 @@ if [[ "${1:-}" == "--clean" ]]; then
     rm -f old/*"${ver}"*
   done
 
-  echo "Clean complete. Debs and configs archived to old/ (last 2 kept)."
+  reset_kernel_src
+  success "Clean complete. Debs and configs archived to old/ (last 2 kept), kernel source reset."
   exit 0
 fi
 
@@ -49,23 +68,9 @@ if [[ "${1:-}" == "--tools" ]]; then
   make -j"$N_PROC" -C tools/power/cpupower
   sudo make -C tools/power/cpupower install
   sudo ldconfig
-  echo "cpupower installed."
+  success "cpupower installed."
   exit 0
 fi
-
-# --- Helpers -----------------------------------------------------------------
-info() { printf "[*] %s\n" "$@"; }
-warn() { printf "[!] %s\n" "$@"; }
-debug() {
-  [[ $DEBUG -eq 0 ]] && return 0
-  VERBOSITY=1
-  printf "[D] %s\n" "$@"
-}
-success() { printf "[+] %s\n" "$@"; }
-die() {
-  printf "ERROR: %s\n" "$@" >&2
-  exit 1
-}
 
 # --- Sanity checks -----------------------------------------------------------
 info "Current kernel: $(uname -r)"
@@ -83,9 +88,13 @@ info "Using GCC ${GCC_MAJOR}"
 
 command -v ccache &> /dev/null || die "ccache not found."
 
+# --- Check if kernel source is up to date ------------------------------------
+git fetch --quiet 2> /dev/null
+[[ "$(git rev-parse HEAD)" != "$(git rev-parse '@{u}' 2> /dev/null)" ]] && warn "Kernel source is not at the latest upstream commit."
+
 # --- Clean & reset git -------------------------------------------------------
 info "Cleanup and checkout..."
-git reset --hard && git clean -dfx  # NOTE: change if patches once introduced
+reset_kernel_src
 
 # --- Determine kernel version from git tag -----------------------------------
 KERNEL_VERSION_DIR=$(git tag --merged HEAD --sort=version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | tail -n1)
@@ -176,10 +185,19 @@ success "Done."
 echo
 
 # --- Summary & confirmation --------------------------------------------------
-echo
 git --no-pager log -1 --pretty=oneline
-echo "Target system: $(uname -a)"
-echo "Kernel version: ${KERNEL_VERSION}"
+info "Target system: $(uname -a)"
+info "Kernel version: ${KERNEL_VERSION}"
+echo
+
+DIFF_FILE="$SCRIPT_DIR/config-$KERNEL_VERSION-$LOCALVERSION.diff"
+FLIPS=$(grep -E ' [yn] -> [yn]$' "$DIFF_FILE" || true)
+if [[ -n "$FLIPS" ]]; then
+  warn "olddefconfig flipped the following options:"
+  echo "$FLIPS"
+  echo
+fi
+
 read -rp "Compile this kernel? [y/N] " confirm
 [[ "$confirm" =~ ^[Yy]$ ]] || {
   info "Aborted."

@@ -10,12 +10,14 @@ installable `.deb` packages.
 
 ## What It Does
 
-1. Fetches the matching Ubuntu mainline `.deb` and extracts its `.config`
+1. Checks whether the kernel source tree is up to date with its upstream remote
+   (`git fetch` + HEAD vs `@{u}` comparison); warns if behind
+2. Fetches the matching Ubuntu mainline `.deb` and extracts its `.config`
    (falls back to the running kernel config if the download fails)
-2. Merges hardware-specific config fragments from `fragments/` using
+3. Merges hardware-specific config fragments from `fragments/` using
    `scripts/kconfig/merge_config.sh` for proper Kconfig dependency resolution
    (see [Target Hardware](#target-hardware) and [Config Fragments](#config-fragments))
-3. Builds the kernel with `make bindeb-pkg`, producing `linux-image`,
+4. Builds the kernel with `make bindeb-pkg`, producing `linux-image`,
    `linux-headers`, and `linux-libc-dev` packages
 
 ## Who Is It For
