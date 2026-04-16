@@ -51,7 +51,7 @@ sudo cp rtl8125k-1.fw rtl9151a-1.fw /lib/firmware/rtl_nic/
 - git
 - ccache
 - dpkg-deb (included in dpkg on Debian/Ubuntu)
-- Kernel sources cloned into a `linux/` subdirectory (blobless clone recommended, see Quick Start)
+- Kernel sources cloned into a `linux/` subdirectory (shallow clone recommended, see Quick Start)
 
 ## Quick Start
 
@@ -59,8 +59,8 @@ Using an LTS kernel version is recommended for stability and longer support.
 Currently tested against the `linux-rolling-lts` branch.
 
 ```bash
-# Clone the kernel sources next to the scripts (blobless clone saves ~3 GB)
-git clone --filter=blob:none --branch linux-rolling-lts \
+# Clone the kernel sources next to the scripts (shallow clone saves ~3 GB)
+git clone --depth=1 --branch linux-rolling-lts \
   https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git
 
 cd ..
