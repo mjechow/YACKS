@@ -89,7 +89,7 @@ info "Using GCC ${GCC_MAJOR}"
 command -v ccache &> /dev/null || die "ccache not found."
 
 # --- Check if kernel source is up to date ------------------------------------
-git fetch --quiet 2> /dev/null
+git fetch --depth=1 --quiet 2> /dev/null
 [[ "$(git rev-parse HEAD)" != "$(git rev-parse '@{u}' 2> /dev/null)" ]] && warn "Kernel source is not at the latest upstream commit."
 
 # --- Clean & reset git -------------------------------------------------------
