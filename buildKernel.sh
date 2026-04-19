@@ -89,16 +89,20 @@ info "Using GCC ${GCC_MAJOR}"
 command -v ccache &> /dev/null || die "ccache not found."
 
 # --- Check if kernel source is up to date ------------------------------------
-git fetch --depth=1 --quiet 2> /dev/null
-[[ "$(git rev-parse HEAD)" != "$(git rev-parse '@{u}' 2> /dev/null)" ]] && warn "Kernel source is not at the latest upstream commit."
+_upstream_hash=$(timeout 5 git ls-remote origin "refs/heads/$(git rev-parse --abbrev-ref HEAD)" 2> /dev/null | awk '{print $1}' || true)
+if [[ -n "$_upstream_hash" && "$(git rev-parse HEAD)" != "$_upstream_hash" ]]; then
+  warn "Kernel source is not at the latest upstream commit."
+fi
+unset _upstream_hash
 
 # --- Clean & reset git -------------------------------------------------------
 info "Cleanup and checkout..."
 reset_kernel_src
 
-# --- Determine kernel version from git tag -----------------------------------
-KERNEL_VERSION_DIR=$(git tag --merged HEAD --sort=version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | tail -n1)
-debug "Latest merged version tag: $KERNEL_VERSION_DIR"
+# --- Determine kernel version from Makefile -----------------------------------
+KERNEL_VERSION_DIR=v$(awk '/^VERSION =/{v=$3} /^PATCHLEVEL =/{p=$3} /^SUBLEVEL =/{s=$3} END{print v"."p"."s}' Makefile)
+[[ "$KERNEL_VERSION_DIR" == "v.." ]] && die "Could not parse kernel version from Makefile."
+debug "Kernel version from Makefile: $KERNEL_VERSION_DIR"
 KERNEL_VERSION="${KERNEL_VERSION_DIR#v}" # strip leading 'v'; only adds hyphen if REV is set
 
 # --- Download Ubuntu mainline .deb to extract its .config --------------------
