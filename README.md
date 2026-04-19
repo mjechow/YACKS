@@ -11,7 +11,8 @@ installable `.deb` packages.
 ## What It Does
 
 1. Checks whether the kernel source tree is up to date with its upstream remote
-   (`git fetch` + HEAD vs `@{u}` comparison); warns if behind
+   (`git ls-remote` comparison, no fetch required); warns if behind.
+   The kernel version is read directly from `linux/Makefile` (no tags required).
 2. Fetches the matching Ubuntu mainline `.deb` and extracts its `.config`
    (falls back to the running kernel config if the download fails)
 3. Merges hardware-specific config fragments from `fragments/` using
@@ -51,7 +52,7 @@ sudo cp rtl8125k-1.fw rtl9151a-1.fw /lib/firmware/rtl_nic/
 - git
 - ccache
 - dpkg-deb (included in dpkg on Debian/Ubuntu)
-- Kernel sources cloned into a `linux/` subdirectory (shallow clone recommended, see Quick Start)
+- Kernel sources cloned into a `linux/` subdirectory (see Quick Start)
 
 ## Quick Start
 
@@ -59,8 +60,8 @@ Using an LTS kernel version is recommended for stability and longer support.
 Currently tested against the `linux-rolling-lts` branch.
 
 ```bash
-# Clone the kernel sources next to the scripts (shallow clone saves ~3 GB)
-git clone --depth=1 --branch linux-rolling-lts \
+# Clone the kernel sources next to the scripts
+git clone --branch linux-rolling-lts \
   https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git
 
 cd ..
