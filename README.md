@@ -19,7 +19,7 @@ installable `.deb` packages.
    `scripts/kconfig/merge_config.sh` for proper Kconfig dependency resolution
    (see [Target Hardware](#target-hardware) and [Config Fragments](#config-fragments))
 4. Builds the kernel with `make bindeb-pkg`, producing `linux-image`,
-   `linux-headers`, and `linux-libc-dev` packages
+   `linux-headers`, and `linux-libc-dev` packages, then prompts to install them
 
 ## Who Is It For
 
@@ -66,11 +66,8 @@ git clone --branch linux-rolling-lts \
 
 cd ..
 
-# Build
+# Build (prompts to install at the end)
 ./buildKernel.sh
-
-# Install the generated packages
-sudo dpkg -i linux-image-*.deb linux-headers-*.deb linux-libc-dev_*.deb
 ```
 
 ## Configuration
