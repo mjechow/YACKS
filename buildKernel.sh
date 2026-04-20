@@ -225,5 +225,18 @@ fi
 success "Build successful!"
 cd "$SCRIPT_DIR" || die "cd back to script dir failed."
 echo
-info "Install with:"
-info "  sudo dpkg -i linux-image-$KERNEL_VERSION-$LOCALVERSION*.deb linux-headers-$KERNEL_VERSION-$LOCALVERSION*.deb linux-libc-dev_$KERNEL_VERSION-*.deb"
+
+DEBS=(
+  linux-image-"$KERNEL_VERSION"-"$LOCALVERSION"*.deb
+  linux-headers-"$KERNEL_VERSION"-"$LOCALVERSION"*.deb
+  linux-libc-dev_"$KERNEL_VERSION"-*.deb
+)
+info "Packages to install:"
+for deb in "${DEBS[@]}"; do printf "    %s\n" "$deb"; done
+echo
+
+read -rp "Install now? [y/N] " install_confirm
+if [[ "$install_confirm" =~ ^[Yy]$ ]]; then
+  sudo dpkg -i "${DEBS[@]}"
+  success "Kernel installed. Reboot to use it."
+fi
