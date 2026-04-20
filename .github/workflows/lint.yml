@@ -3,10 +3,14 @@ on:
   push:
     branches:
       - main
-  pull_request_target:
+      - release-please--**
+  pull_request:
     branches:
       - main
-    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: lint-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: true
 
 name: Lint
 
@@ -18,8 +22,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-python@v6
         with:
           python-version: "3.x"
