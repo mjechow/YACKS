@@ -42,6 +42,28 @@ reset_kernel_src() {
   git -C "$SCRIPT_DIR/$KERNEL_SRC_DIR" reset --hard
   git -C "$SCRIPT_DIR/$KERNEL_SRC_DIR" clean -dfx  # NOTE: change if patches once introduced
 }
+usage() {
+  printf "Usage: %s [OPTION]\n\n" "$(basename "$0")"
+  printf "  -c, --clean      Archive debs to old/, reset kernel source\n"
+  printf "  -p, --purge-old  Remove old installed kernels (keeps newest 2 + distro)\n"
+  printf "  -t, --tools      Build and install cpupower (requires sudo)\n"
+  printf "  -h, --help      Show this help\n"
+  printf "\n  (no option)      Full kernel build\n"
+}
+
+case "${1:-}" in
+  -c) set -- "--clean" ;;
+  -p) set -- "--purge-old" ;;
+  -t) set -- "--tools" ;;
+  -h) set -- "--help" ;;
+  --clean | --purge-old | --tools | --help) ;;
+  --* | -* | ?*) printf "ERROR: Unbekannte Option: %s\n\n" "${1}" >&2; usage >&2; exit 1 ;;
+esac
+
+# --- Hilfe -------------------------------------------------------------------
+if [[ "${1:-}" == "--help" ]]; then
+  usage; exit 0
+fi
 
 # --- Clean mode --------------------------------------------------------------
 if [[ "${1:-}" == "--clean" ]]; then
@@ -60,6 +82,14 @@ if [[ "${1:-}" == "--clean" ]]; then
   reset_kernel_src
   success "Clean complete. Debs and configs archived to old/ (last 2 kept), kernel source reset."
   exit 0
+fi
+
+# --- Purge old kernels -------------------------------------------------------
+if [[ "${1:-}" == "--purge-old" ]]; then
+  lb="$(whoami)-$(hostname -s)"
+  dpkg -l "linux-image-*-${lb}*" 2>/dev/null | awk '/^ii/{print $2}' | sort -V | head -n -2 \
+    | sed -n 'p;s/linux-image-/linux-headers-/p' | xargs -r sudo apt-get purge
+  sudo apt-get autoremove -y && success "Done."; exit 0
 fi
 
 # --- Tools mode: build and install cpupower from kernel source ---------------
