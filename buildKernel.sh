@@ -43,12 +43,15 @@ reset_kernel_src() {
   git -C "$SCRIPT_DIR/$KERNEL_SRC_DIR" clean -dfx  # NOTE: change if patches once introduced
 }
 usage() {
+  printf "Yet Another Compile Kernel Script — a custom Linux kernel build system for\n"
+  _ver=$(git -C "$SCRIPT_DIR" describe --tags --abbrev=0 2>/dev/null || true)
+  printf "Ubuntu / Linux Mint desktops.%s\n\n" "${_ver:+ Version $_ver}"
   printf "Usage: %s [OPTION]\n\n" "$(basename "$0")"
   printf "  -c, --clean      Archive debs to old/, reset kernel source\n"
   printf "  -p, --purge-old  Remove old installed kernels (keeps newest 2 + distro)\n"
   printf "  -t, --tools      Build and install cpupower (requires sudo)\n"
-  printf "  -h, --help      Show this help\n"
-  printf "\n  (no option)      Full kernel build\n"
+  printf "  -h, --help       Show this help\n"
+  printf "\n  (no option)    Full kernel build\n"
 }
 
 case "${1:-}" in
