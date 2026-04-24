@@ -87,11 +87,10 @@ avoid interfering with your regular ccache.
 Additional commands:
 
 ```bash
-# Clean build artifacts, archive debs to old/ (keeps last 2 versions), reset kernel source tree
-./buildKernel.sh --clean
-
-# Build and install cpupower from kernel source (one-time, requires sudo)
-./buildKernel.sh --tools
+./buildKernel.sh -h            # show help (--hilfe)
+./buildKernel.sh -c            # clean build artifacts, archive debs to old/ (--clean)
+./buildKernel.sh -p            # remove old installed kernels, keeps newest 2 + distro (--purge-old)
+./buildKernel.sh -t            # build and install cpupower, one-time, requires sudo (--tools)
 ```
 
 ## Key Optimizations
