@@ -119,7 +119,7 @@ To reduce build time and kernel footprint, the following are disabled:
 | NICs | ~60 unused vendors; enterprise cards (Chelsio, Broadcom bnx2x); ~30 legacy USB network adapters |
 | Storage HBAs | All SCSI HBA drivers (Fibre Channel, SAS, iSCSI); FCoE stack; Arcmsr, SYM53C8XX |
 | Filesystems | XFS, ReiserFS, JFS, NILFS2, EROFS, OCFS2, GFS2, Ceph, OrangeFS, AFS, 9P, Coda, HFS/HFS+, Minix, ROMFS, CRAMFS, UFS |
-| Protocols | IPX, AppleTalk, X.25, DECnet, ATM, TIPC, DCCP, RDS, L2TP |
+| Protocols | IPX, AppleTalk, X.25, DECnet, ATM, TIPC, DCCP, RDS, SCTP, L2TP |
 | Virtualisation | Xen and Hyper-V guest support, staging drivers |
 | Media | TV tuners, DVB, radio, SDR, IR remote controls — UVC webcam kept |
 | Input | Touchscreen, tablet/pen, game controllers (joystick, XInput, PlayStation, Steam), laptop touchpad drivers (ALPS, Elan, Synaptics, Cypress, TrackPoint, FocalTech) |
