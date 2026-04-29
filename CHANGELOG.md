@@ -1,5 +1,14 @@
 # Changelog
 
+## [4.3.1](https://github.com/mjechow/yacks/compare/4.3.0...4.3.1) (2026-04-29)
+
+
+### Bug Fixes
+
+* **ci:** use PAT for release-please to allow workflow triggers ([a4a3489](https://github.com/mjechow/yacks/commit/a4a348964efe2dad13869cef36e7791b6e8c1b7c))
+* **lint:** re-add push trigger for release-please branch ([fbeea71](https://github.com/mjechow/yacks/commit/fbeea71fbfd7b2fed3163a380d9e3058337c4c97))
+* **purge:** fix --purge-old aborting under pipefail and without tty ([c04dbba](https://github.com/mjechow/yacks/commit/c04dbba494e6cbc85a0dbdc145276fd6febc3416))
+
 ## [4.3.0](https://github.com/mjechow/yacks/compare/4.2.0...4.3.0) (2026-04-24)
 
 
