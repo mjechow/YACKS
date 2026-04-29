@@ -35,6 +35,17 @@ AMD Zen 4 (Ryzen 9 7950X3D), NVIDIA GPU, Linux Mint 22.3.
 See `fragments/cpu-amd-zen4.config` and `fragments/hardware-desktop.config` for
 the full hardware profile.
 
+## udev Rules
+
+The `udev/` directory contains rules that must be installed once on the target system:
+
+```bash
+sudo cp udev/60-ioscheduler.rules /etc/udev/rules.d/
+sudo udevadm control --reload-rules && sudo udevadm trigger
+```
+
+This assigns **Kyber** to NVMe devices and **BFQ** to rotational HDDs at boot.
+
 ## Firmware
 
 The Realtek RTL8125 NIC (r8169 driver) requires firmware files not yet
@@ -101,7 +112,7 @@ Additional commands:
 - **Memory:** THP with MADVISE, Multi-Gen LRU, PER_VMA_LOCK, NUMA balancing
 - **Swap:** zswap with zstd compressor (default on)
 - **Network:** BBR congestion control, FQ/FQ_CODEL/CAKE qdisc
-- **I/O:** mq-deadline default (NVMe), BFQ available for rotational devices
+- **I/O:** Kyber for NVMe, BFQ for rotational HDDs (assigned at runtime via udev)
 - **Modules:** zstd compression
 - **Security:** AppArmor (Mint default), no SELinux
 - **Debug:** All tracing, kprobes, BTF, DWARF, KASAN, etc. disabled
@@ -143,7 +154,7 @@ related options so only the relevant files need to change when hardware changes.
 | `gpu-nvidia.config` | RTX 3070: DRM core + SimpleDRM; disables nouveau, AMD GPU, Intel GPU |
 | `sound-realtek.config` | HDA Intel + Realtek ALC4080; disables unused HDA codecs, HDMI audio, AMD APU audio, Intel SOC audio |
 | `network-realtek.config` | RTL8125 2.5GbE, Bluetooth; disables WiFi, all other NIC vendors, legacy USB network adapters; BBR/FQ/Cake |
-| `storage.config` | NVMe, SATA, SCSI, BFQ scheduler, filesystems; disables PATA, unused SATA controllers, exotic FS, enterprise HBA/FCoE |
+| `storage.config` | NVMe, SATA, SCSI, Kyber + BFQ schedulers, filesystems; disables PATA, unused SATA controllers, exotic FS, enterprise HBA/FCoE |
 | `hardware-desktop.config` | USB, HID, SD card readers, UVC webcam, watchdog off, no-AMD crypto accelerators, VFIO; disables laptop touchpad drivers and PCIe card readers |
 
 Fragments are applied in the order listed; later fragments take precedence on

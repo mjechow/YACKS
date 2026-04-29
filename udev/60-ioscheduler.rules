@@ -1,0 +1,5 @@
+# I/O scheduler assignment
+# NVMe: Kyber (low-latency, two-queue scheduler designed for fast SSDs)
+ACTION=="add|change", KERNEL=="nvme[0-9]n[0-9]", ATTR{queue/scheduler}="kyber"
+# HDDs: BFQ (fair queuing with per-process I/O budget)
+ACTION=="add|change", KERNEL=="sd[a-z]", ATTR{queue/rotational}=="1", ATTR{queue/scheduler}="bfq"
