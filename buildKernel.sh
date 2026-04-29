@@ -90,8 +90,8 @@ fi
 # --- Purge old kernels -------------------------------------------------------
 if [[ "${1:-}" == "--purge-old" ]]; then
   lb="$(whoami)-$(hostname -s)"
-  dpkg -l "linux-image-*-${lb}*" 2>/dev/null | awk '/^ii/{print $2}' | sort -V | head -n -2 \
-    | sed -n 'p;s/linux-image-/linux-headers-/p' | xargs -r sudo apt-get purge
+  { dpkg -l "linux-image-*-${lb}*" 2>/dev/null || true; } | awk '/^ii/{print $2}' | sort -V | head -n -2 \
+    | sed -n 'p;s/linux-image-/linux-headers-/p' | xargs -r sudo apt-get purge -y
   sudo apt-get autoremove -y && success "Done."; exit 0
 fi
 
