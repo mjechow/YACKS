@@ -44,7 +44,7 @@ sudo cp udev/60-ioscheduler.rules /etc/udev/rules.d/
 sudo udevadm control --reload-rules && sudo udevadm trigger
 ```
 
-This assigns **Kyber** to NVMe devices and **BFQ** to rotational HDDs at boot.
+This assigns **Kyber** to NVMe devices at boot.
 
 ## Firmware
 
@@ -112,7 +112,7 @@ Additional commands:
 - **Memory:** THP with MADVISE, Multi-Gen LRU, PER_VMA_LOCK, NUMA balancing
 - **Swap:** zswap with zstd compressor (default on)
 - **Network:** BBR congestion control, FQ/FQ_CODEL/CAKE qdisc
-- **I/O:** Kyber for NVMe, BFQ for rotational HDDs (assigned at runtime via udev)
+- **I/O:** Kyber for NVMe (assigned at runtime via udev; no rotational disks)
 - **Modules:** zstd compression
 - **Security:** AppArmor (Mint default), no SELinux
 - **Debug:** All tracing, kprobes, BTF, DWARF, KASAN, etc. disabled
@@ -154,7 +154,7 @@ related options so only the relevant files need to change when hardware changes.
 | `gpu-nvidia.config` | RTX 3070: DRM core + SimpleDRM; disables nouveau, AMD GPU, Intel GPU |
 | `sound-realtek.config` | HDA Intel + Realtek ALC4080; disables unused HDA codecs, HDMI audio, AMD APU audio, Intel SOC audio |
 | `network-realtek.config` | RTL8125 2.5GbE, Bluetooth; disables WiFi, all other NIC vendors, legacy USB network adapters; BBR/FQ/Cake |
-| `storage.config` | NVMe, SATA, SCSI, Kyber + BFQ schedulers, filesystems; disables PATA, unused SATA controllers, exotic FS, enterprise HBA/FCoE |
+| `storage.config` | NVMe, SATA, SCSI, Kyber scheduler, filesystems; disables PATA, unused SATA controllers, exotic FS, enterprise HBA/FCoE |
 | `hardware-desktop.config` | USB, HID, SD card readers, UVC webcam, watchdog off, no-AMD crypto accelerators, VFIO; disables laptop touchpad drivers and PCIe card readers |
 
 Fragments are applied in the order listed; later fragments take precedence on
