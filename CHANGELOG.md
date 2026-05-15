@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.4.0](https://github.com/mjechow/yacks/compare/4.3.2...4.4.0) (2026-05-15)
+
+
+### Features
+
+* **storage:** update hardware profile to dual NVMe PCIe 5.0/4.0 setup ([c62e802](https://github.com/mjechow/yacks/commit/c62e8024fefafcdebb177f5416285bc2498f845a))
+
 ## [4.3.2](https://github.com/mjechow/yacks/compare/4.3.1...4.3.2) (2026-04-30)
 
 
