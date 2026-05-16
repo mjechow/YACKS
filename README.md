@@ -112,7 +112,7 @@ To reduce build time and kernel footprint, the following are disabled:
 
 | Category | Disabled |
 | --- | --- |
-| GPU drivers | Intel (i915, Xe), AMD (amdgpu, radeon), Nouveau — proprietary NVIDIA via DKMS only |
+| GPU drivers | Intel (i915, Xe), Nouveau, legacy AMD radeon |
 | Wireless | WiFi stack, NFC, WiMAX, hamradio, CAN, ISDN |
 | Legacy buses | PCMCIA, FireWire, InfiniBand, parallel port, floppy |
 | Legacy storage | All PATA/IDE drivers; unused SATA add-in controllers (Promise, SIL, NV, VIA, ULI, MV…) |
@@ -127,7 +127,7 @@ To reduce build time and kernel footprint, the following are disabled:
 | Platform | ChromeOS, Surface, Mellanox platform drivers; laptop PCIe card readers (Realtek, Alcor) |
 | Industrial / embedded | IIO (sensors), MTD (flash), I3C, GNSS/GPS, CXL, DCA, Greybus, COMEDI, HSI |
 | Accessibility | Braille console, Speakup screen reader |
-| Sound | AMD APU audio (Raven, Renoir, Van Gogh, Yellow Carp, Phoenix, Rembrandt — 7950X3D has no iGPU); all unused HDA codecs; HDMI audio; Intel SOC audio |
+| Sound | AMD APU audio (Raven, Renoir, Van Gogh, Yellow Carp, Phoenix, Rembrandt — 7950X3D has no iGPU); all unused HDA codecs; Intel SOC audio |
 | Misc | Hardware watchdog, NTB, FPGA |
 
 ## Config Fragments
@@ -140,8 +140,10 @@ related options so only the relevant files need to change when hardware changes.
 | --- | --- |
 | `base.config` | Compiler/LTO, zstd, zswap, scheduling, preemption, timer, security, debug, module signing |
 | `cpu-amd-zen4.config` | Ryzen 9 7950X3D: P-state, EDAC, SMBus, AES-NI, ACPI, PCIe, hardware monitoring |
-| `gpu-nvidia.config` | RTX 3070: DRM core + SimpleDRM; disables nouveau, AMD GPU, Intel GPU |
-| `sound-realtek.config` | HDA Intel + Realtek ALC4080; disables unused HDA codecs, HDMI audio, AMD APU audio, Intel SOC audio |
+| `gpu-nvidia.config` | RTX 3070: DRM core + SimpleDRM; disables nouveau, AMD GPU, Intel GPU — comment out when AMD card is stable |
+| `gpu-amd.config` | RX 9070 (RDNA 4): enables amdgpu + ROCm/HSA; overrides AMD disables from gpu-nvidia.config |
+| `sound-realtek.config` | HDA Intel + Realtek ALC4080 (3.5mm) + USB audio; disables unused HDA codecs, AMD APU audio, Intel SOC audio |
+| `sound-hdmi.config` | HDMI/DP audio codecs for AMD (ATI) and NVIDIA; comment out to disable all display audio |
 | `network-realtek.config` | RTL8125 2.5GbE, Bluetooth; disables WiFi, all other NIC vendors, legacy USB network adapters; BBR/FQ/Cake |
 | `storage.config` | NVMe, SATA, SCSI, filesystems; disables PATA, unused SATA controllers, exotic FS, enterprise HBA/FCoE |
 | `hardware-desktop.config` | USB, HID, SD card readers, UVC webcam, watchdog off, no-AMD crypto accelerators; disables laptop touchpad drivers and PCIe card readers |
