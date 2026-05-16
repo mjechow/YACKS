@@ -75,12 +75,15 @@ if [[ "${1:-}" == "--clean" ]]; then
   mv -f ./linux-image-*.deb ./linux-headers-*.deb ./linux-libc-dev_*.deb config-* old/ 2> /dev/null || true
   rm -f ./*.log ./*.buildinfo ./*.changes ./linux-modules-*.deb
 
-  # Prune old/ – keep only the 2 most recent kernel versions
-  # shellcheck disable=SC2012 # filenames are controlled, no special chars
-  ls -t old/linux-image-*.deb 2> /dev/null | tail -n +3 | while read -r img; do
-    ver=${img#old/linux-image-}; ver=${ver%%_*}
-    rm -f old/*"${ver}"*
-  done
+  # Prune old/ – keep only the 2 most recent of each file type
+  # shellcheck disable=SC2012  # filenames are controlled, no special chars
+  ls -t old/linux-image-*.deb    2>/dev/null | tail -n +3 | xargs -r rm -f
+  # shellcheck disable=SC2012
+  ls -t old/linux-headers-*.deb  2>/dev/null | tail -n +3 | xargs -r rm -f
+  # shellcheck disable=SC2012
+  ls -t old/linux-libc-dev_*.deb 2>/dev/null | tail -n +3 | xargs -r rm -f
+  # shellcheck disable=SC2012
+  ls -t old/config-*             2>/dev/null | tail -n +3 | xargs -r rm -f
 
   reset_kernel_src
   success "Clean complete. Debs and configs archived to old/ (last 2 kept), kernel source reset."
