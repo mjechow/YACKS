@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.5.1](https://github.com/mjechow/yacks/compare/4.5.0...4.5.1) (2026-05-16)
+
+
+### Bug Fixes
+
+* **sound,gpu:** pin new AMDGPU/sound options from diff review ([#53](https://github.com/mjechow/yacks/issues/53)) ([9cec13c](https://github.com/mjechow/yacks/commit/9cec13ce6b5dd40d7d44d12bbacb4ff2d9ed3ab4))
+
 ## [4.5.0](https://github.com/mjechow/yacks/compare/4.4.0...4.5.0) (2026-05-16)
 
 
