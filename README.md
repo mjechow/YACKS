@@ -144,7 +144,7 @@ related options so only the relevant files need to change when hardware changes.
 | `sound-realtek.config` | HDA Intel + Realtek ALC4080; disables unused HDA codecs, HDMI audio, AMD APU audio, Intel SOC audio |
 | `network-realtek.config` | RTL8125 2.5GbE, Bluetooth; disables WiFi, all other NIC vendors, legacy USB network adapters; BBR/FQ/Cake |
 | `storage.config` | NVMe, SATA, SCSI, filesystems; disables PATA, unused SATA controllers, exotic FS, enterprise HBA/FCoE |
-| `hardware-desktop.config` | USB, HID, SD card readers, UVC webcam, watchdog off, no-AMD crypto accelerators, VFIO; disables laptop touchpad drivers and PCIe card readers |
+| `hardware-desktop.config` | USB, HID, SD card readers, UVC webcam, watchdog off, no-AMD crypto accelerators; disables laptop touchpad drivers and PCIe card readers |
 
 Fragments are applied in the order listed; later fragments take precedence on
 conflicts. `merge_config.sh` runs `make olddefconfig` after the merge, so
