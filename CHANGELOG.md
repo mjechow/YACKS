@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.5.0](https://github.com/mjechow/yacks/compare/4.4.0...4.5.0) (2026-05-16)
+
+
+### Features
+
+* **gpu:** add AMD RX 9070 (RDNA 4) support alongside RTX 3070 ([#51](https://github.com/mjechow/yacks/issues/51)) ([2c310b6](https://github.com/mjechow/yacks/commit/2c310b6ccb5a7e2786c59ce8cbf30abcb420e68e))
+
 ## [4.4.0](https://github.com/mjechow/yacks/compare/4.3.2...4.4.0) (2026-05-15)
 
 
