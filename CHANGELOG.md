@@ -1,5 +1,16 @@
 # Changelog
 
+## [5.0.0](https://github.com/mjechow/yacks/compare/4.5.1...5.0.0) (2026-05-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* **gpu:** gpu-nvidia.config deleted; kernel no longer built with NVIDIA/nouveau support
+
+### Features
+
+* **gpu:** drop NVIDIA RTX 3070, switch to AMD RX 9070 ([3fc63d1](https://github.com/mjechow/yacks/commit/3fc63d1e2f81ea2d06c25fdb33370543772da619))
+
 ## [4.5.1](https://github.com/mjechow/yacks/compare/4.5.0...4.5.1) (2026-05-16)
 
 
