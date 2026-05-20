@@ -31,7 +31,7 @@ size.
 
 ## Target Hardware
 
-AMD Zen 4 (Ryzen 9 7950X3D), NVIDIA GPU, Linux Mint 22.3.
+AMD Zen 4 (Ryzen 9 7950X3D), AMD GPU (RX 9070), Linux Mint 22.3.
 See `fragments/cpu-amd-zen4.config` and `fragments/hardware-desktop.config` for
 the full hardware profile.
 
@@ -140,10 +140,9 @@ related options so only the relevant files need to change when hardware changes.
 | --- | --- |
 | `base.config` | Compiler/LTO, zstd, zswap, scheduling, preemption, timer, security, debug, module signing |
 | `cpu-amd-zen4.config` | Ryzen 9 7950X3D: P-state, EDAC, SMBus, AES-NI, ACPI, PCIe, hardware monitoring |
-| `gpu-nvidia.config` | RTX 3070: DRM core + SimpleDRM; disables nouveau, AMD GPU, Intel GPU — comment out when AMD card is stable |
-| `gpu-amd.config` | RX 9070 (RDNA 4): enables amdgpu + ROCm/HSA; overrides AMD disables from gpu-nvidia.config |
+| `gpu-amd.config` | RX 9070 (RDNA 4): enables amdgpu + ROCm/HSA |
 | `sound-realtek.config` | HDA Intel + Realtek ALC4080 (3.5mm) + USB audio; disables unused HDA codecs, AMD APU audio, Intel SOC audio |
-| `sound-hdmi.config` | HDMI/DP audio codecs for AMD (ATI) and NVIDIA; comment out to disable all display audio |
+| `sound-hdmi.config` | HDMI/DP audio codecs for AMD (ATI); comment out to disable all display audio |
 | `network-realtek.config` | RTL8125 2.5GbE, Bluetooth; disables WiFi, all other NIC vendors, legacy USB network adapters; BBR/FQ/Cake |
 | `storage.config` | NVMe, SATA, SCSI, filesystems; disables PATA, unused SATA controllers, exotic FS, enterprise HBA/FCoE |
 | `hardware-desktop.config` | USB, HID, SD card readers, UVC webcam, watchdog off, no-AMD crypto accelerators; disables laptop touchpad drivers and PCIe card readers |

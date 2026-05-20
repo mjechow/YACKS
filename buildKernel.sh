@@ -39,8 +39,8 @@ die() {
   exit 1
 }
 reset_kernel_src() {
-  git -C "$SCRIPT_DIR/$KERNEL_SRC_DIR" reset --hard
-  git -C "$SCRIPT_DIR/$KERNEL_SRC_DIR" clean -dfx  # NOTE: change if patches once introduced
+  git -C "$SCRIPT_DIR/$KERNEL_SRC_DIR" reset --hard > /dev/null
+  git -C "$SCRIPT_DIR/$KERNEL_SRC_DIR" clean -dfx   > /dev/null  # NOTE: change if patches once introduced
 }
 usage() {
   printf "Yet Another Compile Kernel Script — a custom Linux kernel build system for\n"
@@ -196,7 +196,6 @@ make CC=gcc olddefconfig || die "Configuration processing failed!"
 FRAGMENT_FILES=(
   "${FRAGMENTS_DIR}/base.config"
   "${FRAGMENTS_DIR}/cpu-amd-zen4.config"
-  "${FRAGMENTS_DIR}/gpu-nvidia.config"
   "${FRAGMENTS_DIR}/gpu-amd.config"
   "${FRAGMENTS_DIR}/sound-realtek.config"
   "${FRAGMENTS_DIR}/sound-hdmi.config"
