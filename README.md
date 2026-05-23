@@ -25,7 +25,7 @@ installable `.deb` packages.
 
 Anyone running Linux Mint or Ubuntu on AMD Zen 4 hardware who wants a
 stripped-down, performance-tuned kernel without distro debug overhead. The
-config is opinionated — it disables WiFi, Intel/AMD GPU drivers, game
+config is opinionated — it disables WiFi, Intel/NVIDIA GPU drivers, game
 controllers, and dozens of unused subsystems to reduce build time and kernel
 size.
 
@@ -45,6 +45,21 @@ wget https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git
 wget https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/plain/rtl_nic/rtl9151a-1.fw
 sudo cp rtl8125k-1.fw rtl9151a-1.fw /lib/firmware/rtl_nic/
 ```
+
+## Known Issues
+
+### Bluetooth non-functional since kernel rolling-lts commit 70d37a8b9229
+
+**Device:** MediaTek MT7922 USB Bluetooth `0e8d:0616` (onboard MSI X670E Carbon WiFi)
+**Symptom:** `Bluetooth: hci0: Failed to send wmt func ctrl (-22)` — `bluetoothctl` reports no controller.
+**Cause:** Commit `70d37a8b9229` ("btmtk: validate WMT event SKB length before struct access",
+upstream `634a4408c06`) added strict SKB length validation for the WMT FUNC_CTRL response.
+The `0e8d:0616` device sends a shorter response than the driver now expects, returning EINVAL.
+Before this commit the driver silently read out-of-bounds SKB tailroom — BT worked by accident.
+**Status:** Not yet reported upstream (as of 2026-05-23). Monitor `linux-bluetooth@vger.kernel.org`
+for a fix. If unresolved after one week, submit a patch — see kernel patch submission guidelines:
+`Documentation/process/submitting-patches.rst` in the kernel source tree.
+**Workaround:** None applied. Reboot into distro kernel (`6.17.0-*-generic`) for Bluetooth.
 
 ## Requirements
 
@@ -119,7 +134,7 @@ To reduce build time and kernel footprint, the following are disabled:
 | NICs | ~60 unused vendors; enterprise cards (Chelsio, Broadcom bnx2x); ~30 legacy USB network adapters |
 | Storage HBAs | All SCSI HBA drivers (Fibre Channel, SAS, iSCSI); FCoE stack; Arcmsr, SYM53C8XX |
 | Filesystems | XFS, ReiserFS, JFS, NILFS2, EROFS, OCFS2, GFS2, Ceph, OrangeFS, AFS, 9P, Coda, HFS/HFS+, Minix, ROMFS, CRAMFS, UFS |
-| Protocols | IPX, AppleTalk, X.25, DECnet, ATM, TIPC, DCCP, RDS, SCTP, L2TP |
+| Protocols | IPX, AppleTalk, X.25, DECnet, ATM, TIPC, DCCP, RDS, SCTP, L2TP, WireGuard (VPN handled by Fritz!Box router) |
 | Virtualisation | Xen and Hyper-V guest support, staging drivers |
 | Media | TV tuners, DVB, radio, SDR, IR remote controls — UVC webcam kept |
 | Input | Touchscreen, tablet/pen, game controllers (joystick, XInput, PlayStation, Steam), laptop touchpad drivers (ALPS, Elan, Synaptics, Cypress, TrackPoint, FocalTech) |
