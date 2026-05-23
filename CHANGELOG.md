@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.0.1](https://github.com/mjechow/yacks/compare/5.0.0...5.0.1) (2026-05-23)
+
+
+### Bug Fixes
+
+* **build:** stabilize ccache by pinning KBUILD_BUILD_TIMESTAMP to kernel commit ([4560b3a](https://github.com/mjechow/yacks/commit/4560b3a9b5f9b3152dd5222c949148b04aef7d6a))
+* **fragments:** drop unused, wrong-family, and platform-specific drivers ([d214e78](https://github.com/mjechow/yacks/commit/d214e78e73425a59ab7e76d8d88c120c851ce13c))
+
 ## [5.0.0](https://github.com/mjechow/yacks/compare/4.5.1...5.0.0) (2026-05-20)
 
 
