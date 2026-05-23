@@ -46,21 +46,6 @@ wget https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git
 sudo cp rtl8125k-1.fw rtl9151a-1.fw /lib/firmware/rtl_nic/
 ```
 
-## Known Issues
-
-### Bluetooth non-functional since kernel rolling-lts commit 70d37a8b9229
-
-**Device:** MediaTek MT7922 USB Bluetooth `0e8d:0616` (onboard MSI X670E Carbon WiFi)
-**Symptom:** `Bluetooth: hci0: Failed to send wmt func ctrl (-22)` — `bluetoothctl` reports no controller.
-**Cause:** Commit `70d37a8b9229` ("btmtk: validate WMT event SKB length before struct access",
-upstream `634a4408c06`) added strict SKB length validation for the WMT FUNC_CTRL response.
-The `0e8d:0616` device sends a shorter response than the driver now expects, returning EINVAL.
-Before this commit the driver silently read out-of-bounds SKB tailroom — BT worked by accident.
-**Status:** Not yet reported upstream (as of 2026-05-23). Monitor `linux-bluetooth@vger.kernel.org`
-for a fix. If unresolved after one week, submit a patch — see kernel patch submission guidelines:
-`Documentation/process/submitting-patches.rst` in the kernel source tree.
-**Workaround:** None applied. Reboot into distro kernel (`6.17.0-*-generic`) for Bluetooth.
-
 ## Requirements
 
 - GCC 13+ (required for `-march=znver4`)
