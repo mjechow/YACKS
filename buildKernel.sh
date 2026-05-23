@@ -8,7 +8,9 @@ set -euo pipefail
 
 DEBUG=0
 VERBOSITY=0
-REV= # optional build revision suffix; if set, appended to LOCALVERSION as -$REV (e.g. REV=2 → username-hostname-2)
+# optional build revision suffix; if set, appended to LOCALVERSION as -$REV (e.g. REV=2 → username-hostname-2)
+# use a date (e.g. 20250524) or incrementing number so dpkg sorts newer builds higher than older ones
+REV= # $(date +%Y%m%d)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -21,6 +23,8 @@ ARCH="$(uname -m)"
 export ARCH
 export CCACHE_DIR="${SCRIPT_DIR}/ccache_kernel" # separater Cache vom normalen ccache
 export CCACHE_MAXSIZE="10G"
+KBUILD_BUILD_TIMESTAMP="$(git -C "${SCRIPT_DIR}/${KERNEL_SRC_DIR}" log -1 --format='%cd' --date=format:'%a %b %d %T %Z %Y')"
+export KBUILD_BUILD_TIMESTAMP
 export LD=ld.bfd
 # shfmt-ignore
 export N_PROC=$(($(nproc) + 2)) # default: +2; you should configure a maximum of 1.5x CPU cores for faster builds on I/O bound systems
